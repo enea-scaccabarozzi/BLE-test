@@ -3,10 +3,10 @@ import {
   FlatList,
   ListRenderItemInfo,
   Modal,
-  SafeAreaView,
   Text,
   StyleSheet,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { Device } from "react-native-ble-plx";
 
@@ -50,6 +50,7 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
     (item: ListRenderItemInfo<Device>) => {
       return (
         <DeviceModalListItem
+          key={`${item.item.id}-${item.index}`}
           item={item}
           connectToPeripheral={connectToPeripheral}
           closeModal={closeModal}
@@ -66,7 +67,7 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
       transparent={false}
       visible={visible}
     >
-      <SafeAreaView style={modalStyle.modalTitle}>
+      <View style={modalStyle.modalTitle}>
         <Text style={modalStyle.modalTitleText}>
           Tap on a device to connect
         </Text>
@@ -74,8 +75,9 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
           contentContainerStyle={modalStyle.modalFlatlistContiner}
           data={devices}
           renderItem={renderDeviceModalListItem}
+          keyExtractor={(item, index) => `${item.id}-${index}`} // Ensure unique key with id and index
         />
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };

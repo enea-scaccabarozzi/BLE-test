@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "life2m",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -13,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.switch.lifetwom"
+      "bundleIdentifier": "com.getswitch.life2m"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +26,7 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT"
       ],
-      "package": "com.switch.lifetwom"
+      "package": "com.getswitch.life2m"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,13 +36,12 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": [
-            "peripheral",
-            "central"
-          ],
+          "modes": ["peripheral", "central"],
           "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
         }
-      ]
+      ],
+      "expo-router",
+      "expo-asset"
     ],
     "extra": {
       "eas": {
