@@ -57,7 +57,7 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
         />
       );
     },
-    [closeModal, connectToPeripheral]
+    [closeModal, connectToPeripheral],
   );
 
   return (

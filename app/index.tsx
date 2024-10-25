@@ -8,9 +8,10 @@ import {
   FlatList,
   ListRenderItemInfo,
 } from "react-native";
-import DeviceModal from "@/DeviceConnectionModal";
-import useBLE from "@/useBLE";
 import { Characteristic, Service } from "react-native-ble-plx";
+
+import DeviceModal from "@app/DeviceConnectionModal";
+import useBLE from "@app/useBLE";
 
 type ServiceWithCharacteristics = {
   service: Service;

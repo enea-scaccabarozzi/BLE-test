@@ -1,6 +1,6 @@
+import * as ExpoDevice from "expo-device";
 import { useState } from "react";
 import { PermissionsAndroid, Platform } from "react-native";
-import * as ExpoDevice from "expo-device";
 import {
   BleManager,
   Device,
@@ -26,7 +26,7 @@ function useBLE() {
             title: "Location Permission",
             message: "Bluetooth Low Energy requires Location",
             buttonPositive: "OK",
-          }
+          },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } else {
@@ -36,7 +36,7 @@ function useBLE() {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         ]);
         return Object.values(bluetoothPermissions).every(
-          (value) => value === PermissionsAndroid.RESULTS.GRANTED
+          (value) => value === PermissionsAndroid.RESULTS.GRANTED,
         );
       }
     }
@@ -73,7 +73,7 @@ function useBLE() {
 
       for (const service of services) {
         const characteristics = await connected.characteristicsForService(
-          service.uuid
+          service.uuid,
         );
         serviceCharacteristicPairs.push({ service, characteristics });
       }

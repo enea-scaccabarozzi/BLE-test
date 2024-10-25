@@ -1,12 +1,12 @@
-import { Slot, SplashScreen } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Theme, ThemeProvider } from "@react-navigation/native";
+import { Slot, SplashScreen } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { NAV_THEME } from "@/shared/constants";
-import { useColorScheme } from "@/shared";
+import { useColorScheme } from "@app/shared";
+import { NAV_THEME } from "@app/shared/constants";
 
 import "../assets/global.css";
 
@@ -54,7 +54,7 @@ export default function Layout() {
     })().finally(() => {
       SplashScreen.hideAsync();
     });
-  }, []);
+  }, [colorScheme, setColorScheme]);
 
   if (!isColorSchemeLoaded) {
     return null;

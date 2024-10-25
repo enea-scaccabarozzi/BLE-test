@@ -1,3 +1,5 @@
+const { hairlineWidth } = require("nativewind/theme");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./{app,libs}/**/*.{js,jsx,ts,tsx}"],
