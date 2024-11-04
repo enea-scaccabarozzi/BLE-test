@@ -1,4 +1,4 @@
-const generateCrc8Table = (): number[] => {
+export const generateCrc8Table = (): number[] => {
   const table: number[] = new Array(256);
   const polynomial = 0x07;
   for (let i = 0; i < 256; i++) {

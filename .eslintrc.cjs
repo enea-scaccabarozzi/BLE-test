@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["expo", "prettier"],
+  extends: ["expo", "plugin:prettier/recommended"],
   plugins: ["prettier", "neverthrow"],
   rules: {
     "prettier/prettier": "error",
@@ -9,10 +9,10 @@ module.exports = {
       "error",
       {
         groups: [
-          ["builtin", "external"], // Built-in and external together
-          ["internal"], // Internal @penny/ imports
-          ["parent", "sibling"], // Relative imports (parent and sibling)
-          ["type"], // TypeScript type imports
+          ["builtin", "external"],
+          ["internal"],
+          ["parent", "sibling"],
+          ["type"],
         ],
         pathGroups: [
           {
@@ -22,10 +22,10 @@ module.exports = {
           },
         ],
         pathGroupsExcludedImportTypes: ["builtin"],
-        "newlines-between": "always", // Enforce newline between groups
+        "newlines-between": "always",
         alphabetize: {
           order: "asc",
-          caseInsensitive: true, // Case insensitive sorting
+          caseInsensitive: true,
         },
       },
     ],
@@ -35,6 +35,7 @@ module.exports = {
     ecmaVersion: 2021,
     sourceType: "module",
     project: ["./tsconfig.json"],
+    // eslint-disable-next-line no-undef
     tsconfigRootDir: __dirname,
   },
 };
