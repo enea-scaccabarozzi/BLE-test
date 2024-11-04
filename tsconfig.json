@@ -3,7 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@app/*": ["./libs/*"]
+      "@app/*": [
+        "./libs/*"
+      ]
     }
   },
   "files": [
@@ -13,5 +15,9 @@
     "./tailwind.config.js",
     "./babel.config.js"
   ],
-  "include": ["./app/**/*", "./libs/**/*"]
+  "include": [
+    "./app/**/*",
+    "./libs/**/*",
+    "nativewind-env.d.ts"
+  ]
 }
