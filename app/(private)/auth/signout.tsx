@@ -1,10 +1,5 @@
-import { Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SignOutPage } from "@app/auth/pages/sign-out";
 
 export default function Page() {
-  return (
-    <SafeAreaView>
-      <Text>Sign Out</Text>
-    </SafeAreaView>
-  );
+  return <SignOutPage />;
 }

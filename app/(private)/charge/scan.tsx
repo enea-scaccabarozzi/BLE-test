@@ -1,10 +1,5 @@
-import { Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScanPage } from "@app/home/pages/scan";
 
 export default function Page() {
-  return (
-    <SafeAreaView>
-      <Text>Scan</Text>
-    </SafeAreaView>
-  );
+  return <ScanPage />;
 }

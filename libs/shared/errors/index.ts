@@ -43,7 +43,7 @@ const createRecoverableErr = ({ message }: ErrorOpts): RecoverableError => {
   };
 };
 
-const createAppError = (opts: GenericErrorOpts): AppError => {
+export const createAppError = (opts: GenericErrorOpts): AppError => {
   if ("publicMessage" in opts) {
     return createPublicErr(opts);
   } else if ("recoverable" in opts && opts.recoverable) {

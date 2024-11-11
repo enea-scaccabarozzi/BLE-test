@@ -41,5 +41,5 @@ export type PublicErrorOpts = {
 };
 
 export type GenericErrorOpts =
-  | (ErrorOpts & { recoverable: boolean })
+  | (ErrorOpts & { recoverable?: boolean })
   | PublicErrorOpts;

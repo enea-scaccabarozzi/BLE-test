@@ -3,9 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@app/*": [
-        "./libs/*"
-      ]
+      "@app/*": ["./libs/*"]
     }
   },
   "files": [
@@ -18,6 +16,7 @@
   "include": [
     "./app/**/*",
     "./libs/**/*",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "decalrations.d.ts"
   ]
 }

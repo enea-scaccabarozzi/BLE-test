@@ -1,10 +1,5 @@
-import { Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ProfilePage } from "@app/auth/pages/profile";
 
 export default function Page() {
-  return (
-    <SafeAreaView>
-      <Text>Profile</Text>
-    </SafeAreaView>
-  );
+  return <ProfilePage />;
 }
