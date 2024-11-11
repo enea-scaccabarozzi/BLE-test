@@ -33,7 +33,7 @@ export const HomePage = () => {
       deviceChargeStatus={chargeStatus}
       deviceData={dataMeasurements}
       isDeviceConnected={isConnected}
-      logRawEnabled={true}
+      logRawEnabled={(process.env.EXPO_PUBLIC_DEPLOY_STAGE || "dev") === "dev"}
       onConnect={connect}
       onDisconnect={disconnect}
     />
