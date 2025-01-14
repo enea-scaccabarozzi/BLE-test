@@ -104,7 +104,7 @@ export const StartChargePage = () => {
       openDoorMutate={openDoorMutate}
       startChargeMutate={startChargeMutate}
       stationId={parseInt(stationId)}
-      slot={parseInt(slot)}
+      slot={parseInt(slot) + 1}
       action={action}
       isLoading={isOpening || isStarting}
     />

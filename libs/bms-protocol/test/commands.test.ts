@@ -22,48 +22,34 @@ describe("[ bms-protocol ]", () => {
       });
 
       it("should generate payload for DATA_MEASUREMENTS command type", () => {
-        jest.mocked(calculateCrc8).mockReturnValue(0x12);
         const result = generateCommandPayload(BMSCommandType.DATA_MEASUREMENTS);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
           expect(result.value).toEqual(
-            new Uint8Array([...DATA_MEASUREMENTS_DATA, 0x12]),
+            new Uint8Array([...DATA_MEASUREMENTS_DATA]),
           );
         }
-        expect(calculateCrc8).toHaveBeenCalledWith(
-          new Uint8Array(DATA_MEASUREMENTS_DATA),
-        );
       });
 
       it("should generate payload for USAGE_SUMMARY command type", () => {
-        jest.mocked(calculateCrc8).mockReturnValue(0x34);
         const result = generateCommandPayload(BMSCommandType.USAGE_SUMMARY);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
-          expect(result.value).toEqual(
-            new Uint8Array([...USAGE_SUMMARY_DATA, 0x34]),
-          );
+          expect(result.value).toEqual(new Uint8Array([...USAGE_SUMMARY_DATA]));
         }
-        expect(calculateCrc8).toHaveBeenCalledWith(
-          new Uint8Array(USAGE_SUMMARY_DATA),
-        );
       });
 
       it("should generate payload for PRODUCTION_DATA command type", () => {
-        jest.mocked(calculateCrc8).mockReturnValue(0x56);
         const result = generateCommandPayload(BMSCommandType.PRODUCTION_DATA);
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
           expect(result.value).toEqual(
-            new Uint8Array([...PRODUCTION_DATA_DATA, 0x56]),
+            new Uint8Array([...PRODUCTION_DATA_DATA]),
           );
         }
-        expect(calculateCrc8).toHaveBeenCalledWith(
-          new Uint8Array(PRODUCTION_DATA_DATA),
-        );
       });
 
       it("should return an error for an invalid command type", () => {

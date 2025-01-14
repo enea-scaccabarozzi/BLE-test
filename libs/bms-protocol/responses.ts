@@ -3,7 +3,7 @@ import { ok, Result } from "neverthrow";
 import { appErr } from "@app/shared/errors";
 import { AppResult } from "@app/shared/types/errors";
 
-import { calculateCrc8 } from "./crc8";
+// import { calculateCrc8 } from "./crc8";
 import {
   BMSCommandType,
   DataMeasurements,
@@ -22,14 +22,14 @@ export const _prepareResponse = (
     });
 
   const data = response.slice(0, -1); // All but the last byte (CRC)
-  const crcReceived = response[response.length - 1]; // Last byte is CRC
-  const crcCalculated = calculateCrc8(data);
+  // const crcReceived = response[response.length - 1]; // Last byte is CRC
+  // const crcCalculated = calculateCrc8(data);
 
-  if (crcReceived !== crcCalculated)
-    return appErr({
-      publicMessage: "Unable to parse response",
-      publicDetails: "CRC mismatch",
-    }); // Invalid CRC
+  // if (crcReceived !== crcCalculated)
+  //   return appErr({
+  //     publicMessage: "Unable to parse response",
+  //     publicDetails: "CRC mismatch",
+  //   }); // Invalid CRC
 
   return ok(data); // Valid response, return data without CRC byte
 };
@@ -51,14 +51,17 @@ const _parseDate = (
   month: number,
   day: number,
 ): AppResult<string> => {
-  if (month < 1 || month > 12 || day < 1 || day > 31)
+  const fullYear = 1980 + year; // Adjust the year based on the base year 1980
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
     return appErr({
       publicMessage: "Unable to parse date",
       publicDetails: "Invalid date value",
     });
+  }
 
   return ok(
-    `20${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    `${fullYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
   );
 };
 
@@ -75,11 +78,12 @@ const _parseTime = (
     minutes > 59 ||
     seconds < 0 ||
     seconds > 29
-  )
+  ) {
     return appErr({
       publicMessage: "Unable to parse time",
       publicDetails: "Invalid time value",
     });
+  }
 
   return ok(
     `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds * 2).padStart(2, "0")}`,
@@ -89,46 +93,126 @@ const _parseTime = (
 export const _extractDataMeasurements = (
   response: Uint8Array,
 ): AppResult<DataMeasurements> => {
-  return _readWord(response, 11)
+  return _readWord(response, 11) // Read tempCell
     .map((tempCell) => ({ tempCell }))
     .andThen((res) =>
       _readWord(response, 13).map((tempShunt) => ({ ...res, tempShunt })),
     )
     .andThen((res) =>
-      _readWord(response, 15).map((current) => ({
-        ...res,
-        current: current / 100,
-      })),
+      Result.combine([_readWord(response, 15), _readWord(response, 16)]) // Combine MSB and LSB for current
+        .map(([currentMsb, currentLsb]) => {
+          const current = (currentMsb << 16) | currentLsb; // Combine into int32
+          return { ...res, current: current / 100 }; // Scale current
+        }),
     )
     .andThen((res) =>
       Result.combine(
-        Array.from({ length: 20 }, (_, i) => _readWord(response, 17 + i * 2)),
-      ).map((voltages) => ({ ...res, voltages })),
+        Array.from({ length: 20 }, (_, i) => _readWord(response, 17 + i * 2)), // Read each cell voltage
+      ).map((voltages) => {
+        const avgCellVoltage =
+          voltages.reduce((acc, voltage) => acc + voltage, 0) / voltages.length; // Calculate average cell voltage
+        return { ...res, voltages, avgCellVoltage };
+      }),
     )
     .map((res) => ({
       ...res,
-      soc: response[61],
+      soc: response[61], // State of Charge
     }))
     .andThen((res) =>
-      _readWord(response, 49).map((vbattTotal) => ({
-        ...res,
-        vbattTotal: vbattTotal / 1000,
-      })),
+      Result.combine([_readWord(response, 49), _readWord(response, 50)]) // Total battery voltage (MSB and LSB)
+        .map(([vbattMsb, vbattLsb]) => {
+          const vbattTotal = (vbattMsb << 16) | vbattLsb; // Combine into int32
+          return { ...res, vbattTotal: vbattTotal / 1000 }; // Scale to volts
+        }),
     )
     .andThen((res) =>
-      _readWord(response, 25).map((alarmBms) => ({ ...res, alarmBms })),
+      _readWord(response, 25).map((alarmWord) => {
+        const alarmBms = {
+          maxCurrent: Boolean(alarmWord & (1 << 0)),
+          highBatteryTemp: Boolean(alarmWord & (1 << 1)),
+          highBoardTemp: Boolean(alarmWord & (1 << 2)),
+          maxChargeVoltage: Boolean(alarmWord & (1 << 3)),
+          minDischargeVoltage: Boolean(alarmWord & (1 << 4)),
+          lowEnergyLevel: Boolean(alarmWord & (1 << 5)),
+          lowChargeTemp: Boolean(alarmWord & (1 << 6)),
+          minChargeVoltage: Boolean(alarmWord & (1 << 7)),
+          maxCurrentWarning: Boolean(alarmWord & (1 << 8)),
+          highBatteryTempWarning: Boolean(alarmWord & (1 << 9)),
+          highBoardTempWarning: Boolean(alarmWord & (1 << 10)),
+          maxChargeVoltageWarning: Boolean(alarmWord & (1 << 11)),
+          minDischargeVoltageWarning: Boolean(alarmWord & (1 << 12)),
+          lowEnergyLevelWarning: Boolean(alarmWord & (1 << 13)),
+          lowChargeTempWarning: Boolean(alarmWord & (1 << 14)),
+          minChargeVoltageWarning: Boolean(alarmWord & (1 << 15)),
+        };
+        return { ...res, alarmBms };
+      }),
+    )
+    .andThen(
+      (res) =>
+        _readWord(response, 29).map((cntMaxCurrent) => ({
+          ...res,
+          cntMaxCurrent,
+        })), // Max current alarm counter
+    )
+    .andThen(
+      (res) =>
+        _readWord(response, 30).map((chargeCycles) => ({
+          ...res,
+          chargeCycles,
+        })), // Charge cycle count
     )
     .andThen((res) =>
-      _parseDate(response[34], response[35], response[36]).map((dateRtc) => ({
-        ...res,
-        dateRtc,
-      })),
+      Result.combine([_readWord(response, 32), _readWord(response, 33)]) // Balancing status flags (MSB and LSB)
+        .map(([balancingMsb, balancingLsb]) => ({
+          ...res,
+          balancingStatus: { msb: balancingMsb, lsb: balancingLsb },
+        })),
     )
     .andThen((res) =>
-      _parseTime(response[37], response[38], response[39]).map((hourRtc) => ({
-        ...res,
-        hourRtc,
-      })),
+      _readWord(response, 40).map((statusWord) => {
+        const flgBms = {
+          chargerCommand: Boolean(statusWord & (1 << 0)),
+          toolCommand: Boolean(statusWord & (1 << 1)),
+          eepromInProgramming: Boolean(statusWord & (1 << 2)),
+          eepromAlarm: Boolean(statusWord & (1 << 3)),
+          chargeState: Boolean(statusWord & (1 << 4)),
+          balancingType: Boolean(statusWord & (1 << 5)),
+          dischargeState: Boolean(statusWord & (1 << 6)),
+          generalAlarm: Boolean(statusWord & (1 << 7)),
+          buzzerCommand: Boolean(statusWord & (1 << 8)),
+          outputAvailable: Boolean(statusWord & (1 << 9)),
+          chargeCompleted: Boolean(statusWord & (1 << 10)),
+          prechargeChannelCharge: Boolean(statusWord & (1 << 11)),
+          prechargeChannelDischarge: Boolean(statusWord & (1 << 12)),
+          chargeRelayCommand: Boolean(statusWord & (1 << 13)),
+          mosfetOn: Boolean(statusWord & (1 << 14)),
+        };
+        return { ...res, flgBms };
+      }),
+    )
+    .andThen((res) =>
+      _readWord(response, 55).map((statusWord1) => {
+        const flg1Bms = {
+          customClientFlag1: Boolean(statusWord1 & (1 << 0)),
+          customClientFlag2: Boolean(statusWord1 & (1 << 1)),
+          customClientFlag3: Boolean(statusWord1 & (1 << 2)),
+          transportMode: Boolean(statusWord1 & (1 << 3)),
+          eepromLoadError: Boolean(statusWord1 & (1 << 4)),
+          maxDischargeRepeatCurrent: Boolean(statusWord1 & (1 << 5)),
+          maxContinuousDischargeCurrent: Boolean(statusWord1 & (1 << 6)),
+          maxChargeRepeatCurrent: Boolean(statusWord1 & (1 << 7)),
+          currentInInt32: Boolean(statusWord1 & (1 << 8)),
+          isMasterVersion: Boolean(statusWord1 & (1 << 9)),
+          outputNegativeDischarge: Boolean(statusWord1 & (1 << 10)),
+          outputNegativeCharge: Boolean(statusWord1 & (1 << 11)),
+          unused1: Boolean(statusWord1 & (1 << 12)),
+          unused2: Boolean(statusWord1 & (1 << 13)),
+          unused3: Boolean(statusWord1 & (1 << 14)),
+          unused4: Boolean(statusWord1 & (1 << 15)),
+        };
+        return { ...res, flg1Bms };
+      }),
     );
 };
 

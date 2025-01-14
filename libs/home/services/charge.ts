@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 import { fromPromise } from "neverthrow";
 
+import { useBle } from "@app/ble/hooks/use-ble";
 import { createAppError } from "@app/shared/errors";
 import { useHttp } from "@app/shared/hooks/use-http";
 import { AppResultAsync } from "@app/shared/types/errors";
@@ -9,6 +10,7 @@ import { ChargeStatus } from "../type/charge";
 
 export const useChargeService = () => {
   const { http } = useHttp();
+  const { toggleMosfet } = useBle();
 
   const promiseAdapter = <T>(resultFn: () => AppResultAsync<T>) => {
     return async () => {
@@ -69,6 +71,7 @@ export const useChargeService = () => {
           });
     })
       .map((res) => res.data)
+      .andThrough(() => toggleMosfet(false))
       .mapErr((err) => {
         console.error(err);
         return err;
@@ -86,6 +89,7 @@ export const useChargeService = () => {
           });
     })
       .map((res) => res.data)
+      .andThrough(() => toggleMosfet(true))
       .mapErr((err) => {
         console.error(err);
         return err;

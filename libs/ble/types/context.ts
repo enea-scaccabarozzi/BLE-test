@@ -7,4 +7,5 @@ export interface BleContextType {
   connect: () => AppResultAsync<true>;
   disconnect: () => AppResultAsync<true>;
   requestDataUpdate: () => AppResultAsync<DataMeasurements>;
+  toggleMosfet: (targetStatus: boolean) => AppResultAsync<boolean>;
 }

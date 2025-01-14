@@ -119,13 +119,13 @@ describe("[ bms-protocol ]", () => {
 
     describe("parseResponse", () => {
       it("should parse response for DATA_MEASUREMENTS command type with valid date and time", () => {
-        const response = new Uint8Array(62);
-        response[34] = 0x14; // year (e.g., 2020)
-        response[35] = 0x04; // month
-        response[36] = 0x19; // day
-        response[37] = 0x0b; // hours
-        response[38] = 0x2d; // minutes
-        response[39] = 0x14; // seconds
+        const hexResponse =
+          "8e21003c0001007701694100160019fffffffd0a0a0a060a060a040a050a040a040a000a030a040a030a030a030a030a02000000000000000000000a040800001a2a55005f00000005003200000000283811a800000000004800000042000000d200010000009a0000000000000000963c00000000000f001401000035000000003aec0000000000000000000028";
+
+        const response = new Uint8Array(
+          hexResponse.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+        );
+
         jest
           .mocked(calculateCrc8)
           .mockReturnValue(response[response.length - 1]);
@@ -133,6 +133,28 @@ describe("[ bms-protocol ]", () => {
           response,
           BMSCommandType.DATA_MEASUREMENTS,
         );
+
+        expect(result.isOk()).toBe(true);
+      });
+
+      it("should parse response for DATA_MEASUREMENTS command type with valid date and time", () => {
+        const hexResponse =
+          "jiEAPAABAHcBaUEAFQAX/////QoICgQKBAoDCgMKAwoCCf4KAAoCCgEKAQoBCgEKAAAAAAAAAAAAAAAKAggAABmB7ABdAAAABQAyAAAAACg5v0UAAAAAABUAAABCAAAA0gABAAAAmgAAAAAAAAAAlh8AAAAAAA8AFAEAADUAAAAANmoAAAAAAAAAAAAAlQ==";
+
+        const response = new Uint8Array(
+          hexResponse.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+        );
+
+        jest
+          .mocked(calculateCrc8)
+          .mockReturnValue(response[response.length - 1]);
+        const result = parseResponse(
+          response,
+          BMSCommandType.DATA_MEASUREMENTS,
+        );
+
+        console.log(result);
+
         expect(result.isOk()).toBe(true);
       });
 

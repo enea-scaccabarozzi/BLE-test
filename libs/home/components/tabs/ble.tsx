@@ -34,6 +34,56 @@ export const BleTabComponent = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
+  const extractAlarms = (): { warnings: string[]; alarms: string[] } => {
+    const alarmsMappings = {
+      maxCurrent: { text: "Corrente max", warning: false },
+      highBatteryTemp: { text: "Alta temperatura batt.", warning: false },
+      highBoardTemp: { text: "Alta temp scheda", warning: false },
+      maxChargeVoltage: { text: "Tensione max carica", warning: false },
+      minDischargeVoltage: { text: "Tensione minima scarica", warning: false },
+      lowEnergyLevel: { text: "Livello energia minimo", warning: false },
+      lowChargeTemp: { text: "Bassa temperatura batt. carica", warning: false },
+      minChargeVoltage: { text: "Tensione minima carica", warning: false },
+      maxCurrentWarning: { text: "Corrente max", warning: true },
+      highBatteryTempWarning: { text: "Alta temperatura batt.", warning: true },
+      highBoardTempWarning: { text: "Alta temp scheda", warning: true },
+      maxChargeVoltageWarning: { text: "Tensione max carica", warning: true },
+      minDischargeVoltageWarning: {
+        text: "Tensione minima scarica",
+        warning: true,
+      },
+      lowEnergyLevelWarning: { text: "Livello energia minimo", warning: true },
+      lowChargeTempWarning: {
+        text: "Bassa temperatura batt. carica",
+        warning: true,
+      },
+      minChargeVoltageWarning: {
+        text: "Tensione minima carica",
+        warning: true,
+      },
+    };
+
+    const warnings: string[] = [];
+    const alarms: string[] = [];
+
+    if (deviceData)
+      for (const [key, value] of Object.entries(deviceData?.alarmBms)) {
+        if (value) {
+          if (alarmsMappings[key as keyof typeof alarmsMappings].warning) {
+            warnings.push(
+              alarmsMappings[key as keyof typeof alarmsMappings].text,
+            );
+          } else {
+            alarms.push(
+              alarmsMappings[key as keyof typeof alarmsMappings].text,
+            );
+          }
+        }
+      }
+
+    return { warnings, alarms };
+  };
+
   const handleConnect = () => {
     setIsConnecting(true);
     return onConnect()
@@ -82,13 +132,36 @@ export const BleTabComponent = ({
               <View>
                 <Separator className="my-4" />
                 <View className="gap-1">
-                  <Label>Battery</Label>
+                  <Label>Battery {deviceData.soc}%</Label>
                   <Progress
-                    value={deviceData?.current}
+                    value={deviceData.soc}
                     className="w-full"
-                    indicatorClassName={`${deviceData?.current <= 30 ? "bg-red-500" : "bg-green-500"}`}
+                    indicatorClassName={`${deviceData.soc <= 30 ? "bg-red-500" : "bg-green-500"}`}
                   />
                 </View>
+                {(extractAlarms().alarms.length > 0 ||
+                  extractAlarms().warnings.length > 0) && (
+                  <View className="gap-1 mt-4">
+                    {extractAlarms().alarms.map((alarm, index) => (
+                      <View
+                        key={index}
+                        className="text-red-500 gap-2 flex-row align-middle"
+                      >
+                        <View className="rounded-full bg-red-500 h-3 aspect-square mt-[5px]" />
+                        <Text className="text-red-500">{alarm}</Text>
+                      </View>
+                    ))}
+                    {extractAlarms().warnings.map((warning, index) => (
+                      <View
+                        key={index + extractAlarms().alarms.length}
+                        className="text-yellow-500 gap-2 flex-row align-middle"
+                      >
+                        <View className="rounded-full bg-yellow-500 h-3 aspect-square mt-[5px]" />
+                        <Text className="text-yellow-500">{warning}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
           </View>

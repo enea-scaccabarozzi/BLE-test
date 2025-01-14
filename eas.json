@@ -8,17 +8,21 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_DEPLOY_STAGE": "dev"
+        "EXPO_PUBLIC_DEPLOY_STAGE": "dev",
+        "APP_VARIANT": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_DEPLOY_STAGE": "dev"
+        "EXPO_PUBLIC_DEPLOY_STAGE": "production"
       }
     },
     "production": {
       "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_DEPLOY_STAGE": "production"
       }

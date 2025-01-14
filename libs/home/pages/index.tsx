@@ -11,7 +11,8 @@ import { ChargeStatus } from "../type/charge";
 
 export const HomePage = () => {
   const { fetchStatus, promiseAdapter } = useChargeService();
-  const { dataMeasurements, isConnected, connect, disconnect } = useBle();
+  const { dataMeasurements, isConnected, connect, disconnect, toggleMosfet } =
+    useBle();
 
   const {
     isPending,
@@ -34,7 +35,11 @@ export const HomePage = () => {
       deviceData={dataMeasurements}
       isDeviceConnected={isConnected}
       logRawEnabled={(process.env.EXPO_PUBLIC_DEPLOY_STAGE || "dev") === "dev"}
-      onConnect={connect}
+      onConnect={() =>
+        connect()
+          .andThen(() => toggleMosfet(true))
+          .map(() => true)
+      }
       onDisconnect={disconnect}
     />
   );

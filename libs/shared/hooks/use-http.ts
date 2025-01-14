@@ -16,7 +16,7 @@ function createApiClient(
 // Creating API clients for different aspects
 const http = createApiClient({
   dev: "http://192.168.1.162:3000",
-  production: "http://3.249.135.182/api/v1",
+  production: "https://life2m.eneascaccabarozzi.xyz/api/v1",
 });
 
 // Hook providing access to different API clients and a method to set authorization headers

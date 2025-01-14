@@ -5,10 +5,11 @@ import { AppResult } from "@app/shared/types/errors";
 
 import {
   DATA_MEASUREMENTS_DATA,
+  MOSFET_OFF_DATA,
+  MOSFET_ON_DATA,
   PRODUCTION_DATA_DATA,
   USAGE_SUMMARY_DATA,
 } from "./constants";
-import { calculateCrc8 } from "./crc8";
 import { BMSCommandType } from "./types";
 
 export const generateCommandPayload = (
@@ -29,6 +30,14 @@ export const generateCommandPayload = (
       commandData = PRODUCTION_DATA_DATA;
       break;
 
+    case BMSCommandType.MOSFET_OFF:
+      commandData = MOSFET_OFF_DATA;
+      break;
+
+    case BMSCommandType.MOSFET_ON:
+      commandData = MOSFET_ON_DATA;
+      break;
+
     default:
       return appErr({
         publicMessage: "Unable to generate command payload",
@@ -37,6 +46,5 @@ export const generateCommandPayload = (
   }
 
   const command = new Uint8Array(commandData);
-  const checksum = calculateCrc8(command);
-  return ok(new Uint8Array([...command, checksum]));
+  return ok(new Uint8Array([...command]));
 };
