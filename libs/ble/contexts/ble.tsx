@@ -116,7 +116,6 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
     return requestDataMesuraments(undefined)
       .andTee(setDataMeasurements)
-      .andTee((data) => console.log("setted:", data))
       .mapErr((err) => {
         console.log("ctx err:", err);
         return err;
@@ -159,7 +158,6 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
       return requestPermissions()
         .andThen(() => toggleMosfet(targetStatus, undefined))
-        .andTee((res) => console.log("Mosfet Status:", res))
         .andThen((res) =>
           res === targetStatus
             ? okAsync(res)
@@ -178,7 +176,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
   useEffect(() => {
     if (isConnected) {
-      const interval = setInterval(requestDataUpdate, 3_000); // Update every 10 seconds
+      const interval = setInterval(requestDataUpdate, 3_000); // Update every 3 seconds
       return () => clearInterval(interval);
     }
   }, [isConnected, requestDataUpdate]);
