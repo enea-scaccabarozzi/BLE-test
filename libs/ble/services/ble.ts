@@ -88,7 +88,7 @@ export const useBleService = () => {
   ): Promise<void> => {
     const isConnected = await device.isConnected();
     if (!isConnected) {
-      await device.connect({ autoConnect: true });
+      await device.connect({ autoConnect: false });
     }
     await device.discoverAllServicesAndCharacteristics();
   };
@@ -142,6 +142,9 @@ export const useBleService = () => {
               );
               const responseArray = new Uint8Array(completeBuffer);
               subscription.remove();
+              // print base 64
+              const base64 = Buffer.from(responseArray).toString("base64");
+              console.log("Response complete:", base64);
               resolve(responseArray);
             }
           }
@@ -185,11 +188,21 @@ export const useBleService = () => {
    * Scan for a device and connect to the first one that has a valid name.
    */
   const scanAndConnect = useCallback((): AppResultAsync<Device> => {
-    return fromPromise(
-      (async () => {
-        const device = await new Promise<Device>((resolve, reject) => {
-          const subscription = manager.onStateChange((state) => {
-            if (state === "PoweredOn") {
+    return fromPromise(manager.state(), () =>
+      createAppError({ publicMessage: "Bluetooth state check failed" }),
+    )
+      .andThen((state) => {
+        if (state !== "PoweredOn") {
+          return appErrAsync({
+            publicMessage: "Bluetooth is not enabled",
+          });
+        }
+        return okAsync(state);
+      })
+      .andThen(() =>
+        fromPromise(
+          (async () => {
+            const device = await new Promise<Device>((resolve, reject) => {
               manager.startDeviceScan(null, null, async (error, device) => {
                 if (error) {
                   reject(new Error(`Device scan failed: ${error.message}`));
@@ -202,7 +215,7 @@ export const useBleService = () => {
                 ) {
                   manager.stopDeviceScan();
                   try {
-                    await device.connect({});
+                    await device.connect({ autoConnect: false });
                     await device.discoverAllServicesAndCharacteristics();
                     console.log(
                       "[scanAndConnect] Connected and discovered services",
@@ -223,24 +236,23 @@ export const useBleService = () => {
                   }
                 }
               });
-            }
-          }, true);
-          setTimeout(() => {
-            manager.stopDeviceScan();
-            reject(
-              new Error(
-                "Device scan timed out. Please make sure the device is nearby and powered on",
-              ),
-            );
-          }, 15000);
-        });
-        return device;
-      })(),
-      (err) =>
-        err instanceof Error
-          ? createAppError({ publicMessage: err.message })
-          : createAppError({ publicMessage: "Scan and connect failed" }),
-    );
+              setTimeout(() => {
+                manager.stopDeviceScan();
+                reject(
+                  new Error(
+                    "Device scan timed out. Please make sure the device is nearby and powered on",
+                  ),
+                );
+              }, 15000);
+            });
+            return device;
+          })(),
+          (err) =>
+            err instanceof Error
+              ? createAppError({ publicMessage: err.message })
+              : createAppError({ publicMessage: "Scan and connect failed" }),
+        ),
+      );
   }, [manager]);
 
   /**
@@ -400,12 +412,10 @@ export const useBleService = () => {
 
             console.log(
               "[toggleMosfet] Parsed measuramentes, mosfetOnFlag:",
-              parsed.value.flgBms.mosfetOn,
+              parsed.value.mosfetOn,
             );
             // Return the current MOSFET status.
-            return targetMosfetStatus
-              ? parsed.value.flgBms.mosfetOn
-              : !parsed.value.flgBms.mosfetOn;
+            return parsed.value.mosfetOn;
           } finally {
             releaseLock();
           }
@@ -425,11 +435,47 @@ export const useBleService = () => {
    * Disconnect from the device.
    */
   const disconnect = useCallback((): AppResultAsync<true> => {
-    if (connectedDevice) {
-      connectedDevice.cancelConnection();
-      setConnectedDevice(null);
+    if (!connectedDevice) {
+      return appErrAsync({
+        publicMessage: "Unable to disconnect, no connected device",
+      });
     }
-    return okAsync(true as const);
+    return fromPromise(
+      (async () => {
+        const timeout = 5000; // 5 seconds total
+        const interval = 500; // check every 500 ms
+        const start = Date.now();
+        while (true) {
+          try {
+            // Attempt to cancel the connection
+            await connectedDevice.cancelConnection();
+          } catch (err) {
+            console.error("Disconnection attempt failed:", err);
+          }
+          // Wait for the interval period
+          await new Promise((res) => setTimeout(res, interval));
+
+          // Check if the device is disconnected
+          const stillConnected = await connectedDevice.isConnected();
+          if (!stillConnected) {
+            console.log("Device disconnected successfully.");
+            setConnectedDevice(null);
+            return true;
+          }
+          // If we exceed the timeout, throw an error
+          if (Date.now() - start >= timeout) {
+            throw new Error("Device disconnection timed out after 5 seconds.");
+          }
+          console.log("Device still connected, retrying disconnection...");
+        }
+      })(),
+      (err) =>
+        err instanceof Error
+          ? createAppError({ publicMessage: err.message })
+          : createAppError({
+              publicMessage: "Unable to disconnect, operation failed",
+            }),
+    ).map(() => true as const);
   }, [connectedDevice]);
 
   return {

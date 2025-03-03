@@ -13,10 +13,27 @@ export type DataMeasurements = {
   voltages: number[];
   avgCellVoltage: number;
   soc: number;
-  vbattTotal: number;
+  socPerc: number;
   cntMaxCurrent: number;
   chargeCycles: number;
-  balancingStatus: { msb: number; lsb: number };
+  ahNom: number;
+  comEq: boolean[];
+  dateRtc: Date;
+  hourRtc: {
+    hour: number;
+    minutes: number;
+    seconds: number;
+  };
+  hourSoc: {
+    hour: number;
+    minutes: number;
+    seconds: number;
+  };
+  hourCharg: {
+    hour: number;
+    minutes: number;
+    seconds: number;
+  };
 
   // Alarm status as booleans
   alarmBms: {
@@ -28,6 +45,15 @@ export type DataMeasurements = {
     lowEnergyLevel: boolean;
     lowChargeTemp: boolean;
     minChargeVoltage: boolean;
+    maxDischargeTension: boolean;
+    lowTempDischarge: boolean;
+    maxChargeCurrent: boolean;
+    maxDischargeContinuosCurrent: boolean;
+    serial485: boolean;
+    timerOff: boolean;
+    e2promError: boolean;
+    chargeContactor: boolean;
+    dischargeContactor: boolean;
     maxCurrentWarning: boolean;
     highBatteryTempWarning: boolean;
     highBoardTempWarning: boolean;
@@ -36,45 +62,15 @@ export type DataMeasurements = {
     lowEnergyLevelWarning: boolean;
     lowChargeTempWarning: boolean;
     minChargeVoltageWarning: boolean;
+    maxDischargeTensionWarning: boolean;
+    lowTempDischargeWarning: boolean;
+    maxChargeCurrentWarning: boolean;
+    maxDischargeContinuosCurrentWarning: boolean;
   };
-
-  // System status flags as booleans
-  flgBms: {
-    chargerCommand: boolean;
-    toolCommand: boolean;
-    eepromInProgramming: boolean;
-    eepromAlarm: boolean;
-    chargeState: boolean;
-    balancingType: boolean;
-    dischargeState: boolean;
-    generalAlarm: boolean;
-    buzzerCommand: boolean;
-    outputAvailable: boolean;
-    chargeCompleted: boolean;
-    prechargeChannelCharge: boolean;
-    prechargeChannelDischarge: boolean;
-    chargeRelayCommand: boolean;
-    mosfetOn: boolean;
-  };
-
-  flg1Bms: {
-    customClientFlag1: boolean;
-    customClientFlag2: boolean;
-    customClientFlag3: boolean;
-    transportMode: boolean;
-    eepromLoadError: boolean;
-    maxDischargeRepeatCurrent: boolean;
-    maxContinuousDischargeCurrent: boolean;
-    maxChargeRepeatCurrent: boolean;
-    currentInInt32: boolean;
-    isMasterVersion: boolean;
-    outputNegativeDischarge: boolean;
-    outputNegativeCharge: boolean;
-    unused1: boolean;
-    unused2: boolean;
-    unused3: boolean;
-    unused4: boolean;
-  };
+  flgAdj1: boolean[];
+  flgAdj2: boolean[];
+  flagBms1: boolean[];
+  mosfetOn: boolean;
 };
 
 export type UsageSummary = {

@@ -44,63 +44,51 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     ],
     avgCellVoltage: 5199.65,
     soc: 8,
-    vbattTotal: 0,
+    socPerc: 8,
+    ahNom: 0,
+    comEq: [false],
+    dateRtc: new Date(),
+    hourRtc: { hour: 0, minutes: 0, seconds: 0 },
+    hourSoc: { hour: 0, minutes: 0, seconds: 0 },
+    hourCharg: { hour: 0, minutes: 0, seconds: 0 },
+
     alarmBms: {
       maxCurrent: false,
       highBatteryTemp: false,
-      highBoardTemp: true,
+      highBoardTemp: false,
       maxChargeVoltage: false,
       minDischargeVoltage: false,
       lowEnergyLevel: false,
       lowChargeTemp: false,
       minChargeVoltage: false,
+      maxDischargeTension: false,
+      lowTempDischarge: false,
+      maxChargeCurrent: false,
+      maxDischargeContinuosCurrent: false,
+      serial485: false,
+      timerOff: false,
+      e2promError: false,
       maxCurrentWarning: false,
-      highBatteryTempWarning: true,
+      highBatteryTempWarning: false,
       highBoardTempWarning: false,
-      maxChargeVoltageWarning: true,
+      maxChargeVoltageWarning: false,
       minDischargeVoltageWarning: false,
       lowEnergyLevelWarning: false,
       lowChargeTempWarning: false,
       minChargeVoltageWarning: false,
+      maxDischargeTensionWarning: false,
+      lowTempDischargeWarning: false,
+      maxChargeCurrentWarning: false,
+      maxDischargeContinuosCurrentWarning: false,
+      dischargeContactor: false,
+      chargeContactor: false,
     },
+    flgAdj1: [false],
+    flgAdj2: [false],
+    mosfetOn: true,
     cntMaxCurrent: 2564,
     chargeCycles: 1034,
-    balancingStatus: { msb: 1034, lsb: 2560 },
-    flgBms: {
-      chargerCommand: false,
-      toolCommand: true,
-      eepromInProgramming: false,
-      eepromAlarm: true,
-      chargeState: false,
-      balancingType: false,
-      dischargeState: false,
-      generalAlarm: false,
-      buzzerCommand: true,
-      outputAvailable: true,
-      chargeCompleted: false,
-      prechargeChannelCharge: false,
-      prechargeChannelDischarge: false,
-      chargeRelayCommand: false,
-      mosfetOn: false,
-    },
-    flg1Bms: {
-      customClientFlag1: false,
-      customClientFlag2: false,
-      customClientFlag3: false,
-      transportMode: false,
-      eepromLoadError: false,
-      maxDischargeRepeatCurrent: false,
-      maxContinuousDischargeCurrent: false,
-      maxChargeRepeatCurrent: false,
-      currentInInt32: false,
-      isMasterVersion: false,
-      outputNegativeDischarge: false,
-      outputNegativeCharge: false,
-      unused1: false,
-      unused2: false,
-      unused3: false,
-      unused4: false,
-    },
+    flagBms1: [true],
   });
 
   const requestDataUpdate = useCallback(() => {
@@ -132,6 +120,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
     return requestPermissions()
       .andThen(scanAndConnect)
+      .andThen((device) => toggleMosfet(true, device))
       .andTee(() => setIsConnected(true))
       .map(() => true as const)
       .mapErr((err) => {
@@ -139,7 +128,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
         console.log("ctx err:", err);
         return err;
       });
-  }, [devMode, requestPermissions, scanAndConnect]);
+  }, [devMode, requestPermissions, scanAndConnect, toggleMosfet]);
 
   const handleDisconnect = useCallback(() => {
     if (devMode) {

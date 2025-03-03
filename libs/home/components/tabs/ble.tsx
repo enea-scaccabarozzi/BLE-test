@@ -44,21 +44,74 @@ export const BleTabComponent = ({
       lowEnergyLevel: { text: "Livello energia minimo", warning: false },
       lowChargeTemp: { text: "Bassa temperatura batt. carica", warning: false },
       minChargeVoltage: { text: "Tensione minima carica", warning: false },
-      maxCurrentWarning: { text: "Corrente max", warning: true },
-      highBatteryTempWarning: { text: "Alta temperatura batt.", warning: true },
-      highBoardTempWarning: { text: "Alta temp scheda", warning: true },
-      maxChargeVoltageWarning: { text: "Tensione max carica", warning: true },
+
+      maxDischargeTension: { text: "Tensione massima scarica", warning: false },
+      lowTempDischarge: {
+        text: "Bassa temperatura batt. scarica",
+        warning: false,
+      },
+      maxChargeCurrent: { text: "Corrente max carica", warning: false },
+      maxDischargeContinuosCurrent: {
+        text: "Corrente max scarica continuativa",
+        warning: false,
+      },
+      serial485: { text: "Allarme seriale 485", warning: false },
+      timerOff: { text: "Allarme timer off", warning: false },
+      e2promError: { text: "Allarme caricamento e2prom", warning: false },
+      chargeContactor: {
+        text: "Allarme contattore di carica positivo",
+        warning: false,
+      },
+      dischargeContactor: {
+        text: "Allarme contattore di scarica positivo",
+        warning: false,
+      },
+
+      maxCurrentWarning: {
+        text: "Corrente max",
+        warning: true,
+      },
+      highBatteryTempWarning: {
+        text: "Alta temperatura batt.",
+        warning: true,
+      },
+      highBoardTempWarning: {
+        text: "Alta temp scheda",
+        warning: true,
+      },
+      maxChargeVoltageWarning: {
+        text: "Tensione max carica",
+        warning: true,
+      },
       minDischargeVoltageWarning: {
         text: "Tensione minima scarica",
         warning: true,
       },
-      lowEnergyLevelWarning: { text: "Livello energia minimo", warning: true },
+      lowEnergyLevelWarning: {
+        text: "Livello energia minimo",
+        warning: true,
+      },
       lowChargeTempWarning: {
         text: "Bassa temperatura batt. carica",
         warning: true,
       },
       minChargeVoltageWarning: {
         text: "Tensione minima carica",
+        warning: true,
+      },
+
+      // ------------------------
+      maxDischargeTensionWarning: {
+        text: "Tensione massima scarica",
+        warning: true,
+      },
+      lowTempDischargeWarning: {
+        text: "Bassa temperatura batt. scarica",
+        warning: true,
+      },
+      maxChargeCurrentWarning: { text: "Corrente max carica", warning: true },
+      maxDischargeContinuosCurrentWarning: {
+        text: "Corrente max scarica continuativa",
         warning: true,
       },
     };
@@ -81,7 +134,11 @@ export const BleTabComponent = ({
         }
       }
 
-    return { warnings, alarms };
+    const filteredWarnings = warnings.filter(
+      (warning) => !alarms.includes(warning),
+    );
+
+    return { warnings: filteredWarnings, alarms };
   };
 
   const handleConnect = () => {
@@ -132,11 +189,11 @@ export const BleTabComponent = ({
               <View>
                 <Separator className="my-4" />
                 <View className="gap-1">
-                  <Label>Battery {deviceData.soc}%</Label>
+                  <Label>Battery {deviceData.socPerc}%</Label>
                   <Progress
-                    value={deviceData.soc}
+                    value={deviceData.socPerc}
                     className="w-full"
-                    indicatorClassName={`${deviceData.soc <= 30 ? "bg-red-500" : "bg-green-500"}`}
+                    indicatorClassName={`${deviceData.socPerc <= 30 ? "bg-red-500" : "bg-green-500"}`}
                   />
                 </View>
                 {(extractAlarms().alarms.length > 0 ||
