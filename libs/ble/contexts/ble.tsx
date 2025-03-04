@@ -1,5 +1,11 @@
 import { okAsync } from "neverthrow";
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 
 import { DataMeasurements } from "@app/bms-protocol";
 import { appErrAsync } from "@app/shared/errors";
@@ -33,6 +39,8 @@ export const BleProvider = ({ children, devMode }: IProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [dataMeasurements, setDataMeasurements] =
     useState<DataMeasurements | null>(null);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const mockData = (): DataMeasurements => ({
     tempCell: 22,
@@ -165,9 +173,13 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
   useEffect(() => {
     if (isConnected) {
-      const interval = setInterval(requestDataUpdate, 3_000); // Update every 3 seconds
-      return () => clearInterval(interval);
+      intervalRef.current = setInterval(() => requestDataUpdate(), 3_000);
     }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [isConnected, requestDataUpdate]);
 
   return (

@@ -17,9 +17,10 @@ import { AppResultAsync } from "@app/shared/types/errors";
 
 global.Buffer = require("buffer").Buffer;
 
+const manager = new BleManager();
+
 export const useBleService = () => {
   // Create our BLE manager and keep track of a connected device.
-  const [manager] = useState(new BleManager());
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
 
   // Use a ref for our “lock” so that simultaneous operations are serialized.
@@ -245,6 +246,17 @@ export const useBleService = () => {
                 );
               }, 15000);
             });
+
+            device.onDisconnected(async () => {
+              setConnectedDevice(null);
+              console.log("Device disconnected");
+              console.log(
+                "Devices list:",
+                await manager.connectedDevices([_SERVICE_UUID]),
+              );
+            });
+
+            device.onDisconnected(() => {});
             return device;
           })(),
           (err) =>
@@ -253,7 +265,7 @@ export const useBleService = () => {
               : createAppError({ publicMessage: "Scan and connect failed" }),
         ),
       );
-  }, [manager]);
+  }, []);
 
   /**
    * Request data measurements from the device.
