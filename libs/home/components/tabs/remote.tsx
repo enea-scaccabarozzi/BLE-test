@@ -50,7 +50,15 @@ export const RemoteTabComponent = ({ status }: IProps) => {
             <View>
               <Separator className="my-4" />
               <View className="gap-1">
-                <Label>Battery</Label>
+                {status.current && status.current >= 99 ? (
+                  <Label>
+                    Battery is fully charged. Please stop the charge and close
+                    the door
+                  </Label>
+                ) : (
+                  <Label>Battery {status.current}%</Label>
+                )}
+
                 <Progress
                   value={status.current || 0}
                   className="w-full"
