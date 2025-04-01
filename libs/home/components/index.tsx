@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,7 +10,6 @@ import {
   TabsTrigger,
 } from "@app/shared/components/tabs";
 import { Text } from "@app/shared/components/text";
-import { useToast } from "@app/shared/hooks/use-toast";
 import { AppResultAsync } from "@app/shared/types/errors";
 
 import { ProfileButtonComponent } from "./profile-btn";
@@ -38,29 +37,6 @@ export const HomeComponent = ({
   onDisconnect,
 }: IProps) => {
   const [selectedTab, setSelectedTab] = useState("ble");
-  const { toast } = useToast();
-  const [notificationSent, setNotificationSent] = useState(false);
-
-  useEffect(() => {
-    if (
-      deviceChargeStatus &&
-      deviceChargeStatus.current &&
-      deviceChargeStatus.current >= 99
-    ) {
-      if (notificationSent) return;
-      // set toast message after 5 seconds
-      setTimeout(() => {
-        toast("Battery is fully charged", "success");
-      }, 5000);
-      setNotificationSent(true);
-    } else if (
-      deviceChargeStatus &&
-      deviceChargeStatus.current &&
-      deviceChargeStatus.current < 99
-    ) {
-      setNotificationSent(false);
-    }
-  }, [deviceChargeStatus, notificationSent, toast]);
 
   return (
     <SafeAreaView className="h-full w-full relative">

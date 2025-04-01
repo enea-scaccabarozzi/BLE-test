@@ -89,7 +89,6 @@ export const useChargeService = () => {
           });
     })
       .map((res) => res.data)
-      .andThrough(() => toggleMosfet(true))
       .mapErr((err) => {
         console.error(err);
         return err;
