@@ -95,11 +95,25 @@ export const useChargeService = () => {
       });
   };
 
+  const createDoorViolation = (): AppResultAsync<true> => {
+    return fromPromise(http.post<true>("/charge/violation"), (err) => {
+      return createAppError({
+        publicMessage: "Cannot create door violation, internal error",
+      });
+    })
+      .map((res) => res.data)
+      .mapErr((err) => {
+        console.error(err);
+        return err;
+      });
+  };
+
   return {
     promiseAdapter,
     fetchStatus,
     openDoor,
     startCharge,
     stopCharge,
+    createDoorViolation,
   };
 };

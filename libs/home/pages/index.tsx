@@ -11,7 +11,8 @@ import { useChargeService } from "../services/charge";
 import { ChargeStatus } from "../type/charge";
 
 export const HomePage = () => {
-  const { fetchStatus, promiseAdapter } = useChargeService();
+  const { fetchStatus, promiseAdapter, createDoorViolation } =
+    useChargeService();
   const { dataMeasurements, isConnected, connect, disconnect } = useBle();
 
   const {
@@ -34,17 +35,20 @@ export const HomePage = () => {
       }
 
       if (chargeStatus.status === "closedoor") {
-        const TEN_MINUTES_AGO = 10 * 60 * 1000;
+        // const TEN_MINUTES_AGO = 10 * 60 * 1000;
+        const TEN_MINUTES_AGO = 1000;
         const now = new Date().getTime();
         const endTime = new Date(chargeStatus.end_timestamp).getTime();
         const timeDiff = now - endTime;
         if (timeDiff > TEN_MINUTES_AGO) {
-          return connect().andThen(() =>
-            appErrAsync({
-              publicMessage:
-                "The device has been started with open door, it will be reported",
-            }),
-          );
+          return connect()
+            .andThrough(() => createDoorViolation())
+            .andThen(() =>
+              appErrAsync({
+                publicMessage:
+                  "The device has been started with open door, it will be reported",
+              }),
+            );
         }
         return appErrAsync({
           publicMessage: "Please close the door before connecting",
