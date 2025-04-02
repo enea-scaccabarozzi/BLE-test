@@ -14,5 +14,7 @@ export type ChargeStatus =
       voltage?: number;
       current?: number;
       mac_addr?: string;
+      temperatureAlarm: boolean;
+      threshDownlow: boolean;
     }
   | false;

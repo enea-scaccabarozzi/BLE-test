@@ -47,6 +47,23 @@ export const RemoteTabComponent = ({ status }: IProps) => {
         {isCharging && status ? (
           <View className="gap-1">
             <Text>The device is in charge</Text>
+            {status.threshDownlow && (
+              <View className="text-red-500 gap-2 flex-row align-middle">
+                <View className="rounded-full bg-red-500 h-3 aspect-square mt-[5px]" />
+                <Text className="text-red-500">
+                  Station voltage is below the threshold, it's required to stop
+                  the charge and remove the cable
+                </Text>
+              </View>
+            )}
+            {status.temperatureAlarm && (
+              <View className="text-yellow-500 gap-2 flex-row align-middle">
+                <View className="rounded-full bg-yellow-500 h-3 aspect-square mt-[5px]" />
+                <Text className="text-yellow-500">
+                  Station temperature is critical, charge may be stopped
+                </Text>
+              </View>
+            )}
             <View>
               <Separator className="my-4" />
               <View className="gap-1">
@@ -62,7 +79,7 @@ export const RemoteTabComponent = ({ status }: IProps) => {
                 <Progress
                   value={status.current || 0}
                   className="w-full"
-                  indicatorClassName={`${status.current || 0 <= 30 ? "bg-red-500" : "bg-green-500"}`}
+                  indicatorClassName={`${(status.current || 0) <= 30 ? "bg-red-500" : "bg-green-500"}`}
                 />
               </View>
             </View>
