@@ -30,8 +30,22 @@ export const useBleService = () => {
   const _SERVICE_UUID = "1d5688de-866d-3aa4-ec46-a1bddb37ecf6";
   const _CHARACTERISTIC_UUID = "af20fbac-2518-4998-9af7-af42540731b3";
 
-  const _isValidDeviceName = (name: string | null | undefined): boolean =>
-    name?.startsWith("SIL") ?? false;
+  const _isValidDeviceName = (
+    targetName: string,
+    name: string | null | undefined,
+  ): boolean => {
+    const isScooter = name?.startsWith("SIL-");
+
+    const isWildCardUser = targetName === "SIL-XXX-XXX-XXX";
+
+    if (isScooter) {
+      if (isWildCardUser) return true;
+
+      return name === targetName;
+    }
+
+    return false;
+  };
 
   // ────────────────────────────────────────────────────────────────
   // PERMISSIONS
@@ -188,84 +202,87 @@ export const useBleService = () => {
   /**
    * Scan for a device and connect to the first one that has a valid name.
    */
-  const scanAndConnect = useCallback((): AppResultAsync<Device> => {
-    return fromPromise(manager.state(), () =>
-      createAppError({ publicMessage: "Bluetooth state check failed" }),
-    )
-      .andThen((state) => {
-        if (state !== "PoweredOn") {
-          return appErrAsync({
-            publicMessage: "Bluetooth is not enabled",
-          });
-        }
-        return okAsync(state);
-      })
-      .andThen(() =>
-        fromPromise(
-          (async () => {
-            const device = await new Promise<Device>((resolve, reject) => {
-              manager.startDeviceScan(null, null, async (error, device) => {
-                if (error) {
-                  reject(new Error(`Device scan failed: ${error.message}`));
-                  return;
-                }
-                if (
-                  device &&
-                  (_isValidDeviceName(device.name) ||
-                    _isValidDeviceName(device.localName))
-                ) {
-                  manager.stopDeviceScan();
-                  try {
-                    await device.connect({ autoConnect: false });
-                    await device.discoverAllServicesAndCharacteristics();
-                    console.log(
-                      "[scanAndConnect] Connected and discovered services",
-                    );
-                    setConnectedDevice(device);
-                    resolve(device);
-                  } catch (error) {
-                    setConnectedDevice(null);
-                    reject(
-                      new Error(
-                        `Device connection failed: ${
-                          error instanceof Error
-                            ? error.message
-                            : "Unknown error"
-                        }`,
-                      ),
-                    );
+  const scanAndConnect = useCallback(
+    (deviceName: string): AppResultAsync<Device> => {
+      return fromPromise(manager.state(), () =>
+        createAppError({ publicMessage: "Bluetooth state check failed" }),
+      )
+        .andThen((state) => {
+          if (state !== "PoweredOn") {
+            return appErrAsync({
+              publicMessage: "Bluetooth is not enabled",
+            });
+          }
+          return okAsync(state);
+        })
+        .andThen(() =>
+          fromPromise(
+            (async () => {
+              const device = await new Promise<Device>((resolve, reject) => {
+                manager.startDeviceScan(null, null, async (error, device) => {
+                  if (error) {
+                    reject(new Error(`Device scan failed: ${error.message}`));
+                    return;
                   }
-                }
+                  if (
+                    device &&
+                    (_isValidDeviceName(deviceName, device.name) ||
+                      _isValidDeviceName(deviceName, device.localName))
+                  ) {
+                    manager.stopDeviceScan();
+                    try {
+                      await device.connect({ autoConnect: false });
+                      await device.discoverAllServicesAndCharacteristics();
+                      console.log(
+                        "[scanAndConnect] Connected and discovered services",
+                      );
+                      setConnectedDevice(device);
+                      resolve(device);
+                    } catch (error) {
+                      setConnectedDevice(null);
+                      reject(
+                        new Error(
+                          `Device connection failed: ${
+                            error instanceof Error
+                              ? error.message
+                              : "Unknown error"
+                          }`,
+                        ),
+                      );
+                    }
+                  }
+                });
+                setTimeout(() => {
+                  manager.stopDeviceScan();
+                  reject(
+                    new Error(
+                      "Device scan timed out. Please make sure the device is nearby and powered on",
+                    ),
+                  );
+                }, 15000);
               });
-              setTimeout(() => {
-                manager.stopDeviceScan();
-                reject(
-                  new Error(
-                    "Device scan timed out. Please make sure the device is nearby and powered on",
-                  ),
+
+              device.onDisconnected(async () => {
+                setConnectedDevice(null);
+                console.log("Device disconnected");
+                console.log(
+                  "Devices list:",
+                  await manager.connectedDevices([_SERVICE_UUID]),
                 );
-              }, 15000);
-            });
+              });
 
-            device.onDisconnected(async () => {
-              setConnectedDevice(null);
-              console.log("Device disconnected");
-              console.log(
-                "Devices list:",
-                await manager.connectedDevices([_SERVICE_UUID]),
-              );
-            });
-
-            device.onDisconnected(() => {});
-            return device;
-          })(),
-          (err) =>
-            err instanceof Error
-              ? createAppError({ publicMessage: err.message })
-              : createAppError({ publicMessage: "Scan and connect failed" }),
-        ),
-      );
-  }, []);
+              device.onDisconnected(() => {});
+              return device;
+            })(),
+            (err) =>
+              err instanceof Error
+                ? createAppError({ publicMessage: err.message })
+                : createAppError({ publicMessage: "Scan and connect failed" }),
+          ),
+        );
+    },
+    [],
+  );
 
   /**
    * Request data measurements from the device.
@@ -490,6 +507,22 @@ export const useBleService = () => {
     ).map(() => true as const);
   }, [connectedDevice]);
 
+  /**
+   * Check if the device is still connected.
+   */
+  const checkConnectionStatus = useCallback((): AppResultAsync<boolean> => {
+    if (!connectedDevice) {
+      return okAsync(false);
+    }
+    return fromPromise(connectedDevice.isConnected(), (err) =>
+      err instanceof Error
+        ? createAppError({ publicMessage: err.message })
+        : createAppError({
+            publicMessage: "Unable to check connection status",
+          }),
+    );
+  }, [connectedDevice]);
+
   return {
     scanAndConnect,
     requestPermissions,
@@ -497,5 +530,6 @@ export const useBleService = () => {
     disconnect,
     connectedDevice,
     toggleMosfet,
+    checkConnectionStatus,
   };
 };

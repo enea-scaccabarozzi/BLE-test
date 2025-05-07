@@ -11,11 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@app/shared/components/card";
-// import { Label } from "@app/shared/components/label";
 import { Separator } from "@app/shared/components/separator";
-// import { Switch } from "@app/shared/components/switch";
 import { Text } from "@app/shared/components/text";
-import { useColorScheme } from "@app/shared/hooks/use-color-scheme";
+import { Bike } from "@app/shared/icons/bike";
 import { BookUser } from "@app/shared/icons/book-user";
 import { IdCard } from "@app/shared/icons/id-card";
 import { Info } from "@app/shared/icons/info";
@@ -77,6 +75,11 @@ export const ProfileComponent = ({ profile }: IProps) => {
               label="Fiscal Code"
               value={profile.fiscalCode.toUpperCase()}
               icon={<IdCard className="text-primary" size={18} />}
+            />
+            <ProfileRow
+              label="Device Name"
+              value={profile.deviceName.toUpperCase()}
+              icon={<Bike className="text-primary" size={18} />}
             />
 
             {/* <Separator className="my-4" />

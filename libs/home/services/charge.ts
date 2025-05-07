@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import { fromPromise } from "neverthrow";
+import { fromPromise, okAsync } from "neverthrow";
 
 import { useBle } from "@app/ble/hooks/use-ble";
 import { createAppError } from "@app/shared/errors";
@@ -10,7 +10,7 @@ import { ChargeStatus } from "../type/charge";
 
 export const useChargeService = () => {
   const { http } = useHttp();
-  const { toggleMosfet } = useBle();
+  const { toggleMosfet, isConnected } = useBle();
 
   const promiseAdapter = <T>(resultFn: () => AppResultAsync<T>) => {
     return async () => {
@@ -71,7 +71,7 @@ export const useChargeService = () => {
           });
     })
       .map((res) => res.data)
-      .andThrough(() => toggleMosfet(false))
+      .andThrough(() => (isConnected ? toggleMosfet(false) : okAsync(true)))
       .mapErr((err) => {
         console.error(err);
         return err;

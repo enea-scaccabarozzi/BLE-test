@@ -25,6 +25,8 @@ export const RemoteTabComponent = ({ status }: IProps) => {
     ? ["charging", "charged"].includes(status.status)
     : false;
 
+  const isCloseDoor = status ? status.status === "closedoor" : false;
+
   const handleStop = () => {
     router.push("/charge/stop");
   };
@@ -77,9 +79,11 @@ export const RemoteTabComponent = ({ status }: IProps) => {
                 )}
 
                 <Progress
-                  value={status.current || 0}
+                  value={
+                    status.status === "charged" ? 100 : status.current || 0
+                  }
                   className="w-full"
-                  indicatorClassName={`${(status.current || 0) <= 30 ? "bg-red-500" : "bg-green-500"}`}
+                  indicatorClassName={`${(status.current || 0) > 30 || status.status === "charged" ? "bg-green-500" : "bg-red-500"}`}
                 />
               </View>
             </View>
@@ -94,6 +98,10 @@ export const RemoteTabComponent = ({ status }: IProps) => {
         {isCharging ? (
           <Button className="w-full" onPress={handleStop}>
             <Text>Stop Charge</Text>
+          </Button>
+        ) : isCloseDoor ? (
+          <Button className="w-full" disabled={true}>
+            <Text>Door is open</Text>
           </Button>
         ) : (
           <Button className="w-full" onPress={handleStart}>

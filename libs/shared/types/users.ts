@@ -6,4 +6,5 @@ export interface User {
   name: string;
   surname: string;
   fiscalCode: string;
+  deviceName: string;
 }

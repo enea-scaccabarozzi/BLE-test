@@ -5,14 +5,22 @@ import { Text } from "@app/shared/components/text";
 import { Bike } from "@app/shared/icons/bike";
 
 interface IProps {
-  isCharging: boolean;
+  remoteStatus: string;
   isConnected: boolean;
 }
 
 export const StatusIndicatorComponent = ({
-  isCharging,
+  remoteStatus,
   isConnected,
 }: IProps) => {
+  const isCharging = remoteStatus === "charging" || remoteStatus === "charged";
+
+  const statusMappings = {
+    charging: "Charging",
+    charged: "Fully Charged",
+    closedoor: "Close Door",
+  };
+
   return (
     <View className="flex flex-col gap-3">
       <View className="flex items-center justify-center py-[80]">
@@ -68,7 +76,10 @@ export const StatusIndicatorComponent = ({
         <View
           className={`h-3 mt-[5] aspect-square rounded-full ${isCharging ? "bg-green-500" : "bg-red-500"}`}
         />
-        <Text>{isCharging ? "Charging" : "Not Charging"}</Text>
+        <Text>
+          {statusMappings[remoteStatus as keyof typeof statusMappings] ||
+            "Not Charging"}
+        </Text>
       </View>
     </View>
   );

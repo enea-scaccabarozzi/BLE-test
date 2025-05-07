@@ -50,10 +50,8 @@ export const HomeComponent = ({
           </Text>
         </View>
         <StatusIndicatorComponent
-          isCharging={
-            deviceChargeStatus
-              ? deviceChargeStatus.status === "charging"
-              : false
+          remoteStatus={
+            deviceChargeStatus ? deviceChargeStatus.status : "disconnected"
           }
           isConnected={isDeviceConnected}
         />
@@ -82,6 +80,14 @@ export const HomeComponent = ({
                 deviceData={deviceData}
                 onConnect={onConnect}
                 onDisconnect={onDisconnect}
+                canConnect={
+                  deviceChargeStatus !== undefined
+                    ? deviceChargeStatus === false ||
+                      !["charging", "charged"].includes(
+                        deviceChargeStatus.status,
+                      )
+                    : false
+                }
               />
             </TabsContent>
             <TabsContent value="remote">

@@ -41,9 +41,15 @@ export const ErrorScreen = ({ error }: IProps) => {
         {error && (
           <Text className="mt-2 w-[80%] mx-auto text-center text-xs">
             {error.type === AppErrorType.PublicError ? (
-              <View className="gap-1">
-                <Text>{error.publicMessage}</Text>
-                {error.publicDetails && <Text>{error.publicDetails}</Text>}
+              <View className="mt-4 w-full">
+                <Text className="mx-auto w-full text-center font-bold my-2">
+                  {error.publicMessage}
+                </Text>
+                {error.publicDetails && (
+                  <Text className="mx-auto w-full text-center">
+                    {error.publicDetails}
+                  </Text>
+                )}
               </View>
             ) : (
               <Text>{error.message}</Text>

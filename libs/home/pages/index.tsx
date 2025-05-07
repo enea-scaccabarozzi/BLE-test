@@ -35,8 +35,7 @@ export const HomePage = () => {
       }
 
       if (chargeStatus.status === "closedoor") {
-        // const TEN_MINUTES_AGO = 10 * 60 * 1000;
-        const TEN_MINUTES_AGO = 1000;
+        const TEN_MINUTES_AGO = 10 * 60 * 1000;
         const now = new Date().getTime();
         const endTime = new Date(chargeStatus.end_timestamp).getTime();
         const timeDiff = now - endTime;

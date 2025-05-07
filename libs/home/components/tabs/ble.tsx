@@ -23,6 +23,7 @@ interface IProps {
   deviceData: DataMeasurements | null;
   onConnect: () => AppResultAsync<true>;
   onDisconnect: () => AppResultAsync<true>;
+  canConnect: boolean;
 }
 
 export const BleTabComponent = ({
@@ -30,6 +31,7 @@ export const BleTabComponent = ({
   deviceData,
   onConnect,
   onDisconnect,
+  canConnect,
 }: IProps) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
@@ -244,7 +246,7 @@ export const BleTabComponent = ({
         ) : (
           <Button
             className="w-full"
-            disabled={isConnecting}
+            disabled={isConnecting || !canConnect}
             onPress={handleConnect}
           >
             {isConnecting ? <Text>Connecting...</Text> : <Text>Connect</Text>}

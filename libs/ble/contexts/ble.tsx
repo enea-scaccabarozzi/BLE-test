@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 
+import { useSession } from "@app/auth/hooks/use-session";
 import { DataMeasurements } from "@app/bms-protocol";
 import { appErrAsync } from "@app/shared/errors";
 
@@ -34,13 +35,17 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     requestDataMesuraments,
     disconnect,
     toggleMosfet,
+    checkConnectionStatus,
   } = useBleService();
+
+  const { profile } = useSession();
 
   const [isConnected, setIsConnected] = useState(false);
   const [dataMeasurements, setDataMeasurements] =
     useState<DataMeasurements | null>(null);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const deviceDataIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const mockData = (): DataMeasurements => ({
     tempCell: 22,
@@ -120,6 +125,12 @@ export const BleProvider = ({ children, devMode }: IProps) => {
   }, [isConnected]);
 
   const connect = useCallback(() => {
+    if (profile === null) {
+      return appErrAsync({
+        publicMessage: "Unable to connect, you must login first",
+      });
+    }
+
     if (devMode) {
       setIsConnected(true);
       setDataMeasurements(mockData());
@@ -127,7 +138,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     }
 
     return requestPermissions()
-      .andThen(scanAndConnect)
+      .andThen(() => scanAndConnect(profile.deviceName))
       .andThen((device) => toggleMosfet(true, device))
       .andTee(() => setIsConnected(true))
       .map(() => true as const)
@@ -136,7 +147,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
         console.log("ctx err:", err);
         return err;
       });
-  }, [devMode, requestPermissions, scanAndConnect, toggleMosfet]);
+  }, [devMode, requestPermissions, scanAndConnect, toggleMosfet, profile]);
 
   const handleDisconnect = useCallback(() => {
     if (devMode) {
@@ -173,14 +184,37 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
   useEffect(() => {
     if (isConnected) {
-      intervalRef.current = setInterval(() => requestDataUpdate(), 3_000);
+      deviceDataIntervalRef.current = setInterval(
+        () => requestDataUpdate(),
+        3_000,
+      );
     }
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (deviceDataIntervalRef.current) {
+        clearInterval(deviceDataIntervalRef.current);
       }
     };
   }, [isConnected, requestDataUpdate]);
+
+  // every 5 seconds check if the device is still connected
+  useEffect(() => {
+    if (isConnected) {
+      connectionIntervalRef.current = setInterval(() => {
+        // eslint-disable-next-line neverthrow/must-use-result
+        checkConnectionStatus()
+          .map((res) => setIsConnected(res))
+          .mapErr((err) => {
+            console.log("ctx err:", err);
+            return err;
+          });
+      }, 5_000);
+    }
+    return () => {
+      if (connectionIntervalRef.current) {
+        clearInterval(connectionIntervalRef.current);
+      }
+    };
+  }, [isConnected, checkConnectionStatus]);
 
   return (
     <BleContext.Provider
