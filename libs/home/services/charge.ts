@@ -54,6 +54,7 @@ export const useChargeService = () => {
       },
     )
       .map((res) => res.data)
+
       .mapErr((err) => {
         console.error(err);
         return err;

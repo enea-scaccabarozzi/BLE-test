@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@app/shared/components/card";
 import { Label } from "@app/shared/components/label";
-import { Progress } from "@app/shared/components/progress";
 import { Separator } from "@app/shared/components/separator";
 import { Text } from "@app/shared/components/text";
 
@@ -75,16 +74,11 @@ export const RemoteTabComponent = ({ status }: IProps) => {
                     the door
                   </Label>
                 ) : (
-                  <Label>Battery {status.current}%</Label>
+                  <Label>
+                    Battery is now charging. Please wait until the charge is
+                    finished
+                  </Label>
                 )}
-
-                <Progress
-                  value={
-                    status.status === "charged" ? 100 : status.current || 0
-                  }
-                  className="w-full"
-                  indicatorClassName={`${(status.current || 0) > 30 || status.status === "charged" ? "bg-green-500" : "bg-red-500"}`}
-                />
               </View>
             </View>
           </View>

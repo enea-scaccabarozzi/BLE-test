@@ -10,6 +10,7 @@ import React, {
 import { useSession } from "@app/auth/hooks/use-session";
 import { DataMeasurements } from "@app/bms-protocol";
 import { appErrAsync } from "@app/shared/errors";
+import { useAnalyticsService } from "@app/shared/services/analytics";
 
 import { useBleService } from "../services/ble";
 import { BleContextType } from "../types/context";
@@ -37,8 +38,8 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     toggleMosfet,
     checkConnectionStatus,
   } = useBleService();
-
   const { profile } = useSession();
+  const { trackEvent } = useAnalyticsService();
 
   const [isConnected, setIsConnected] = useState(false);
   const [dataMeasurements, setDataMeasurements] =
@@ -134,12 +135,21 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     if (devMode) {
       setIsConnected(true);
       setDataMeasurements(mockData());
-      return okAsync(true as const);
+      return trackEvent({
+        eventType: "deviceConnect",
+        eventData: {},
+      });
     }
 
     return requestPermissions()
       .andThen(() => scanAndConnect(profile.deviceName))
       .andThen((device) => toggleMosfet(true, device))
+      .andThrough(() =>
+        trackEvent({
+          eventType: "deviceConnect",
+          eventData: {},
+        }),
+      )
       .andTee(() => setIsConnected(true))
       .map(() => true as const)
       .mapErr((err) => {
@@ -147,16 +157,33 @@ export const BleProvider = ({ children, devMode }: IProps) => {
         console.log("ctx err:", err);
         return err;
       });
-  }, [devMode, requestPermissions, scanAndConnect, toggleMosfet, profile]);
+  }, [
+    devMode,
+    requestPermissions,
+    scanAndConnect,
+    toggleMosfet,
+    profile,
+    trackEvent,
+  ]);
 
   const handleDisconnect = useCallback(() => {
     if (devMode) {
       setIsConnected(false);
-      return okAsync(true as const);
+      return trackEvent({
+        eventType: "deviceDisconnect",
+        eventData: {},
+      });
     }
 
-    return disconnect().andTee(() => setIsConnected(false));
-  }, [devMode, disconnect]);
+    return disconnect()
+      .andThrough(() =>
+        trackEvent({
+          eventType: "deviceDisconnect",
+          eventData: {},
+        }),
+      )
+      .andTee(() => setIsConnected(false));
+  }, [devMode, disconnect, trackEvent]);
 
   const handleToggleMosfet = useCallback(
     (targetStatus: boolean) => {
@@ -198,7 +225,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
 
   // every 5 seconds check if the device is still connected
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && !devMode) {
       connectionIntervalRef.current = setInterval(() => {
         // eslint-disable-next-line neverthrow/must-use-result
         checkConnectionStatus()
@@ -214,7 +241,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
         clearInterval(connectionIntervalRef.current);
       }
     };
-  }, [isConnected, checkConnectionStatus]);
+  }, [isConnected, checkConnectionStatus, devMode]);
 
   return (
     <BleContext.Provider
