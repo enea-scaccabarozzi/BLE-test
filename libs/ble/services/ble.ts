@@ -34,17 +34,12 @@ export const useBleService = () => {
     targetName: string,
     name: string | null | undefined,
   ): boolean => {
-    const isScooter = name?.startsWith("SIL-");
-
+    const isScooter = name?.startsWith("SIL");
     const isWildCardUser = targetName === "SIL-XXX-XXX-XXX";
 
-    if (isScooter) {
-      if (isWildCardUser) return true;
+    if (isScooter && isWildCardUser) return true;
 
-      return name === targetName;
-    }
-
-    return false;
+    return name === targetName;
   };
 
   // ────────────────────────────────────────────────────────────────

@@ -106,10 +106,10 @@ export const BleProvider = ({ children, devMode }: IProps) => {
   });
 
   const requestDataUpdate = useCallback(() => {
-    if (!isConnected)
-      return appErrAsync({
-        publicMessage: "Unable to request data, not connected",
-      });
+    // if (!isConnected)
+    //   return appErrAsync({
+    //     publicMessage: "Unable to request data, not connected",
+    //   });
 
     if (devMode) {
       setDataMeasurements(mockData());
@@ -152,6 +152,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
       )
       .andTee(() => setIsConnected(true))
       .map(() => true as const)
+
       .mapErr((err) => {
         setIsConnected(false);
         console.log("ctx err:", err);

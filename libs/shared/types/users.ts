@@ -7,4 +7,5 @@ export interface User {
   surname: string;
   fiscalCode: string;
   deviceName: string;
+  batteryAmp: number;
 }

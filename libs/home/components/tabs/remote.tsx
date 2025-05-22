@@ -17,9 +17,10 @@ import { Text } from "@app/shared/components/text";
 
 interface IProps {
   status?: ChargeStatus;
+  remainingChargeTime?: string;
 }
 
-export const RemoteTabComponent = ({ status }: IProps) => {
+export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
   const isCharging = status
     ? ["charging", "charged"].includes(status.status)
     : false;
@@ -75,8 +76,15 @@ export const RemoteTabComponent = ({ status }: IProps) => {
                   </Label>
                 ) : (
                   <Label>
-                    Battery is now charging. Please wait until the charge is
-                    finished
+                    Battery is now charging.
+                    {remainingChargeTime ? (
+                      <Text>
+                        {" "}
+                        Estimated time to finish charge: {remainingChargeTime}
+                      </Text>
+                    ) : (
+                      <Text>..</Text>
+                    )}
                   </Label>
                 )}
               </View>

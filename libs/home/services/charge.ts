@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
-import { fromPromise, okAsync } from "neverthrow";
+import * as SecureStore from "expo-secure-store";
+import { fromPromise, fromSafePromise } from "neverthrow";
 
 import { useBle } from "@app/ble/hooks/use-ble";
 import { createAppError } from "@app/shared/errors";
@@ -10,13 +11,59 @@ import { ChargeStatus } from "../type/charge";
 
 export const useChargeService = () => {
   const { http } = useHttp();
-  const { toggleMosfet, isConnected } = useBle();
+  const { toggleMosfet, isConnected, connect, requestDataUpdate } = useBle();
+
+  const setStartPercentage = async (percentage: number | null) => {
+    if (percentage === null) {
+      await SecureStore.deleteItemAsync("startPercentage");
+    } else {
+      await SecureStore.setItemAsync("startPercentage", percentage.toString());
+    }
+  };
+
+  const getStartPercentage = async (): Promise<number | null> => {
+    const percentage = await SecureStore.getItemAsync("startPercentage");
+    if (percentage === null) {
+      return null;
+    }
+    return parseInt(percentage, 10);
+  };
 
   const promiseAdapter = <T>(resultFn: () => AppResultAsync<T>) => {
     return async () => {
       const res = await resultFn();
       return res.isOk() ? res.value : Promise.reject(res.error);
     };
+  };
+
+  const getEstimatedChargeTime = async (
+    current: number,
+    capacity: number,
+  ): Promise<[number, string]> => {
+    const startPercentage = await getStartPercentage();
+    if (startPercentage === null) {
+      return [0, "0m"];
+    }
+    // Calculate the remaining capacity to charge
+    const remainingCapacityAh = capacity * (1 - startPercentage / 100);
+
+    // Time in hours
+    const timeHours = remainingCapacityAh / current;
+
+    // Convert to minutes
+    const timeMinutes = timeHours * 60;
+
+    return [timeMinutes, getHumanRelativeTime(timeMinutes)];
+  };
+
+  const getHumanRelativeTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.floor(minutes % 60);
+
+    if (hours > 0) {
+      return `${hours}h ${remainingMinutes}m`;
+    }
+    return `${remainingMinutes}m`;
   };
 
   const fetchStatus = (): AppResultAsync<ChargeStatus> => {
@@ -72,7 +119,12 @@ export const useChargeService = () => {
           });
     })
       .map((res) => res.data)
-      .andThrough(() => (isConnected ? toggleMosfet(false) : okAsync(true)))
+      .andThrough(() => (isConnected ? toggleMosfet(false) : connect()))
+      .andThrough(() =>
+        requestDataUpdate().andThen((data) =>
+          fromSafePromise(setStartPercentage(data.socPerc)),
+        ),
+      )
       .mapErr((err) => {
         console.error(err);
         return err;
@@ -89,6 +141,7 @@ export const useChargeService = () => {
             publicMessage: "Cannot stop charge, internal error",
           });
     })
+      .andThrough(() => fromSafePromise(setStartPercentage(null)))
       .map((res) => res.data)
       .mapErr((err) => {
         console.error(err);
@@ -116,5 +169,6 @@ export const useChargeService = () => {
     startCharge,
     stopCharge,
     createDoorViolation,
+    getEstimatedChargeTime,
   };
 };

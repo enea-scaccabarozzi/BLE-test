@@ -16,10 +16,11 @@ export default {
       backgroundColor: "#ffffff",
     },
     ios: {
-      supportsTablet: true,
-      bundleIdentifier: IS_DEV
-        ? "dev.getswitch.life2m"
-        : "com.getswitch.life2m",
+      supportsTablet: false,
+      bundleIdentifier: IS_DEV ? "dev.getswitch.life2m" : "eu.life2m.app",
+      config: {
+        usesNonExemptEncryption: false,
+      },
     },
     android: {
       adaptiveIcon: {
@@ -60,6 +61,14 @@ export default {
           microphonePermission:
             "Allow $(PRODUCT_NAME) to access your microphone",
           recordAudioAndroid: true,
+        },
+      ],
+      [
+        "expo-secure-store",
+        {
+          configureAndroidBackup: true,
+          faceIDPermission:
+            "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
         },
       ],
       "expo-router",

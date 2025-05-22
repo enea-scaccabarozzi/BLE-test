@@ -21,6 +21,7 @@ import { RemoteTabComponent } from "./tabs/remote";
 
 interface IProps {
   deviceChargeStatus?: ChargeStatus;
+  remainingChargeTime?: string;
   deviceData: DataMeasurements | null;
   isDeviceConnected: boolean;
   logRawEnabled: boolean;
@@ -35,6 +36,7 @@ export const HomeComponent = ({
   isDeviceConnected,
   onConnect,
   onDisconnect,
+  remainingChargeTime,
 }: IProps) => {
   const [selectedTab, setSelectedTab] = useState("ble");
 
@@ -91,7 +93,10 @@ export const HomeComponent = ({
               />
             </TabsContent>
             <TabsContent value="remote">
-              <RemoteTabComponent status={deviceChargeStatus} />
+              <RemoteTabComponent
+                status={deviceChargeStatus}
+                remainingChargeTime={remainingChargeTime}
+              />
             </TabsContent>
             {logRawEnabled && (
               <TabsContent value="raw">
