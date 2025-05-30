@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { DataMeasurements } from "@app/bms-protocol";
+import { ChargeStatus } from "@app/home/type/charge";
 import { Button } from "@app/shared/components/button";
 import {
   Card,
@@ -21,9 +22,9 @@ import { AppErrorType, AppResultAsync } from "@app/shared/types/errors";
 interface IProps {
   isConnected: boolean;
   deviceData: DataMeasurements | null;
+  chargeStatus?: ChargeStatus;
   onConnect: () => AppResultAsync<true>;
   onDisconnect: () => AppResultAsync<true>;
-  canConnect: boolean;
 }
 
 export const BleTabComponent = ({
@@ -31,10 +32,29 @@ export const BleTabComponent = ({
   deviceData,
   onConnect,
   onDisconnect,
-  canConnect,
+  chargeStatus,
 }: IProps) => {
+  const [isCharged, setIsCharged] = useState(
+    chargeStatus &&
+      chargeStatus.end_timestamp === undefined &&
+      chargeStatus.estimatedEnd &&
+      new Date(chargeStatus.estimatedEnd) < new Date(),
+  );
+
+  useEffect(() => {
+    if (chargeStatus) {
+      setIsCharged(
+        chargeStatus.end_timestamp === undefined &&
+          chargeStatus.estimatedEnd &&
+          new Date(chargeStatus.estimatedEnd) < new Date(),
+      );
+    }
+  }, [chargeStatus]);
+
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
+  const [canConnect, setCanConnect] = useState(false);
+  const [connectText, setConnectText] = useState("Connect");
 
   const extractAlarms = (): { warnings: string[]; alarms: string[] } => {
     const alarmsMappings = {
@@ -175,12 +195,50 @@ export const BleTabComponent = ({
       .mapErr(() => setIsConnecting(false));
   };
 
+  useEffect(() => {
+    if (chargeStatus) {
+      if (
+        chargeStatus.status === "charging" ||
+        chargeStatus.status === "charged" ||
+        isCharged
+      ) {
+        setCanConnect(false);
+        setConnectText("Ongoing charge");
+      } else if (
+        chargeStatus.status === "closedoor" ||
+        chargeStatus.status === "charge_timeout" ||
+        chargeStatus.status === "disconnected" ||
+        chargeStatus.status === "ready"
+      ) {
+        const TEN_MINUTES_AGO = 10 * 60 * 1000;
+        const now = new Date().getTime();
+        const endTime = new Date(
+          chargeStatus.end_timestamp as string,
+        ).getTime();
+        const timeDiff = now - endTime;
+        if (timeDiff > TEN_MINUTES_AGO) {
+          setCanConnect(true);
+          setConnectText("Connect With Open Door");
+        } else {
+          setCanConnect(false);
+          setConnectText("Close Door");
+        }
+      } else {
+        setCanConnect(true);
+        setConnectText("Connect");
+      }
+    } else {
+      setCanConnect(true);
+      setConnectText("Connect");
+    }
+  }, [chargeStatus, isCharged]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Device</CardTitle>
         <CardDescription>
-          Monitor from here the status of your device charge
+          Monitor from here the status of your device
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4 native:gap-2">
@@ -249,7 +307,11 @@ export const BleTabComponent = ({
             disabled={isConnecting || !canConnect}
             onPress={handleConnect}
           >
-            {isConnecting ? <Text>Connecting...</Text> : <Text>Connect</Text>}
+            {isConnecting ? (
+              <Text>Connecting...</Text>
+            ) : (
+              <Text>{connectText}</Text>
+            )}
           </Button>
         )}
       </CardFooter>

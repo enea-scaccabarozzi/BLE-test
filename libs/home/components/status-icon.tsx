@@ -19,6 +19,9 @@ export const StatusIndicatorComponent = ({
     charging: "Charging",
     charged: "Fully Charged",
     closedoor: "Close Door",
+    ready: "Close Door",
+    disconnected: "Charge Aborted",
+    charge_timeout: "Charge Timeout",
   };
 
   return (

@@ -7,7 +7,9 @@ export type ChargeStatus =
         | "available"
         | "ready"
         | "charged"
-        | "closedoor";
+        | "closedoor"
+        | "disconnected"
+        | "charge_timeout";
       door: "open" | "closed";
       start_timestamp: string;
       end_timestamp?: string;
@@ -16,5 +18,6 @@ export type ChargeStatus =
       mac_addr?: string;
       temperatureAlarm: boolean;
       threshDownlow: boolean;
+      estimatedEnd?: string;
     }
   | false;

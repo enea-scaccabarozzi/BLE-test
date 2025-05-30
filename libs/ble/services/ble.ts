@@ -122,7 +122,6 @@ export const useBleService = () => {
         characteristicUUID,
         (error, characteristic) => {
           if (error) {
-            console.log("Error monitoring characteristic:", error.message);
             // (We log the error and let the timeout eventually reject.)
           }
           if (characteristic?.value) {
@@ -130,15 +129,10 @@ export const useBleService = () => {
             const chunkB64 = chunk.toString("base64");
             // Ignore special MOSFET responses.
             if (chunkB64 === COF_COMMAND_B64 || chunkB64 === CON_COMMAND_B64) {
-              console.log("Received MOSFET response:", chunkB64);
               return;
             }
             if (totalBytesExpected === -1) {
               totalBytesExpected = chunk[0];
-              console.log(
-                "Recived new response, expected len:",
-                totalBytesExpected,
-              );
             }
             receivedChunks.push(chunkB64);
             const receivedBytes = receivedChunks.reduce(
@@ -146,15 +140,11 @@ export const useBleService = () => {
               0,
             );
             if (receivedBytes >= totalBytesExpected) {
-              console.log("All chunks received. Processing data...");
               const completeBuffer = Buffer.concat(
                 receivedChunks.map((ch) => Buffer.from(ch, "base64")),
               );
               const responseArray = new Uint8Array(completeBuffer);
               subscription.remove();
-              // print base 64
-              const base64 = Buffer.from(responseArray).toString("base64");
-              console.log("Response complete:", base64);
               resolve(responseArray);
             }
           }
@@ -172,22 +162,18 @@ export const useBleService = () => {
    * (for example, toggling the mosfet and requesting data) from overlapping.
    */
   const acquireLock = async (timeout = 5000, interval = 100): Promise<void> => {
-    console.log("Acquiring lock...");
     const start = Date.now();
     while (lockRef.current) {
       if (Date.now() - start > timeout) {
-        console.log("Lock acquisition timed out");
         throw new Error("Device is locked");
       }
       await new Promise((res) => setTimeout(res, interval));
     }
     lockRef.current = true;
-    console.log("Lock acquired");
   };
 
   const releaseLock = () => {
     lockRef.current = false;
-    console.log("Lock released");
   };
 
   // ────────────────────────────────────────────────────────────────
@@ -228,9 +214,6 @@ export const useBleService = () => {
                     try {
                       await device.connect({ autoConnect: false });
                       await device.discoverAllServicesAndCharacteristics();
-                      console.log(
-                        "[scanAndConnect] Connected and discovered services",
-                      );
                       setConnectedDevice(device);
                       resolve(device);
                     } catch (error) {
@@ -259,11 +242,6 @@ export const useBleService = () => {
 
               device.onDisconnected(async () => {
                 setConnectedDevice(null);
-                console.log("Device disconnected");
-                console.log(
-                  "Devices list:",
-                  await manager.connectedDevices([_SERVICE_UUID]),
-                );
               });
 
               device.onDisconnected(() => {});
@@ -301,9 +279,6 @@ export const useBleService = () => {
           await acquireLock();
           try {
             await ensureConnectedAndDiscovered(connected);
-            console.log(
-              "[requestDataMesuraments] Connected and discovered services",
-            );
             // Start monitoring for the complete response.
             const responsePromise = monitorResponse(
               connected,
@@ -320,24 +295,16 @@ export const useBleService = () => {
             const payloadB64 = Buffer.from(payloadResult.value).toString(
               "base64",
             );
-            console.log(
-              "[requestDataMesuraments] Sending payload:",
-              payloadB64,
-            );
             await connected.writeCharacteristicWithResponseForService(
               _SERVICE_UUID,
               _CHARACTERISTIC_UUID,
               payloadB64,
-            );
-            console.log(
-              "[requestDataMesuraments] Command sent, awaiting response",
             );
             const response = await responsePromise;
             const parsed = parseResponse(
               response,
               BMSCommandType.DATA_MEASUREMENTS,
             );
-            console.log("[requestDataMesuraments] Data parsed");
             return parsed;
           } finally {
             releaseLock();
@@ -373,7 +340,6 @@ export const useBleService = () => {
           await acquireLock();
           try {
             await ensureConnectedAndDiscovered(connected);
-            console.log("[toggleMosfet] Connected and discovered services");
             // Start monitoring for the response.
             const responsePromise = monitorResponse(
               connected,
@@ -391,10 +357,6 @@ export const useBleService = () => {
             const togglePayloadB64 = Buffer.from(
               togglePayloadResult.value,
             ).toString("base64");
-            console.log(
-              "[toggleMosfet] Sending toggle payload:",
-              togglePayloadB64,
-            );
             await connected.writeCharacteristicWithResponseForService(
               _SERVICE_UUID,
               _CHARACTERISTIC_UUID,
@@ -412,17 +374,10 @@ export const useBleService = () => {
             const dataPayloadB64 = Buffer.from(
               dataPayloadResult.value,
             ).toString("base64");
-            console.log(
-              "[toggleMosfet] Sending data measurement payload:",
-              dataPayloadB64,
-            );
             await connected.writeCharacteristicWithResponseForService(
               _SERVICE_UUID,
               _CHARACTERISTIC_UUID,
               dataPayloadB64,
-            );
-            console.log(
-              "[toggleMosfet] Commands sent, awaiting response for data measurements",
             );
             const response = await responsePromise;
             const parsed = parseResponse(
@@ -434,10 +389,6 @@ export const useBleService = () => {
               throw new Error("Failed to parse data measurements");
             }
 
-            console.log(
-              "[toggleMosfet] Parsed measuramentes, mosfetOnFlag:",
-              parsed.value.mosfetOn,
-            );
             // Return the current MOSFET status.
             return parsed.value.mosfetOn;
           } finally {
@@ -482,7 +433,6 @@ export const useBleService = () => {
           // Check if the device is disconnected
           const stillConnected = await connectedDevice.isConnected();
           if (!stillConnected) {
-            console.log("Device disconnected successfully.");
             setConnectedDevice(null);
             return true;
           }
@@ -490,7 +440,6 @@ export const useBleService = () => {
           if (Date.now() - start >= timeout) {
             throw new Error("Device disconnection timed out after 5 seconds.");
           }
-          console.log("Device still connected, retrying disconnection...");
         }
       })(),
       (err) =>

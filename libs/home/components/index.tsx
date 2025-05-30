@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,7 +21,6 @@ import { RemoteTabComponent } from "./tabs/remote";
 
 interface IProps {
   deviceChargeStatus?: ChargeStatus;
-  remainingChargeTime?: string;
   deviceData: DataMeasurements | null;
   isDeviceConnected: boolean;
   logRawEnabled: boolean;
@@ -36,9 +35,25 @@ export const HomeComponent = ({
   isDeviceConnected,
   onConnect,
   onDisconnect,
-  remainingChargeTime,
 }: IProps) => {
   const [selectedTab, setSelectedTab] = useState("ble");
+
+  const [isCharged, setIsCharged] = useState(
+    deviceChargeStatus &&
+      deviceChargeStatus.end_timestamp === undefined &&
+      deviceChargeStatus.estimatedEnd &&
+      new Date(deviceChargeStatus.estimatedEnd) < new Date(),
+  );
+
+  useEffect(() => {
+    if (deviceChargeStatus) {
+      setIsCharged(
+        deviceChargeStatus.end_timestamp === undefined &&
+          deviceChargeStatus.estimatedEnd &&
+          new Date(deviceChargeStatus.estimatedEnd) < new Date(),
+      );
+    }
+  }, [deviceChargeStatus]);
 
   return (
     <SafeAreaView className="h-full w-full relative">
@@ -53,7 +68,11 @@ export const HomeComponent = ({
         </View>
         <StatusIndicatorComponent
           remoteStatus={
-            deviceChargeStatus ? deviceChargeStatus.status : "disconnected"
+            isCharged
+              ? "charged"
+              : deviceChargeStatus
+                ? deviceChargeStatus.status
+                : "disconnected"
           }
           isConnected={isDeviceConnected}
         />
@@ -82,20 +101,13 @@ export const HomeComponent = ({
                 deviceData={deviceData}
                 onConnect={onConnect}
                 onDisconnect={onDisconnect}
-                canConnect={
-                  deviceChargeStatus !== undefined
-                    ? deviceChargeStatus === false ||
-                      !["charging", "charged"].includes(
-                        deviceChargeStatus.status,
-                      )
-                    : false
-                }
+                chargeStatus={deviceChargeStatus}
               />
             </TabsContent>
             <TabsContent value="remote">
               <RemoteTabComponent
                 status={deviceChargeStatus}
-                remainingChargeTime={remainingChargeTime}
+                isDeviceConnected={isDeviceConnected}
               />
             </TabsContent>
             {logRawEnabled && (

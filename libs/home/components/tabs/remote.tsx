@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { ChargeStatus } from "@app/home/type/charge";
@@ -17,15 +18,41 @@ import { Text } from "@app/shared/components/text";
 
 interface IProps {
   status?: ChargeStatus;
-  remainingChargeTime?: string;
+  isDeviceConnected?: boolean;
 }
 
-export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
-  const isCharging = status
-    ? ["charging", "charged"].includes(status.status)
-    : false;
+const relativeHumanTime = (target: Date): string => {
+  const diff = target.getTime() - new Date().getTime();
+  if (diff <= 0) return "Just a few seconds...";
 
-  const isCloseDoor = status ? status.status === "closedoor" : false;
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day${days > 1 ? "s" : ""}`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""}`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+
+  return "Less than a minute...";
+};
+
+export const RemoteTabComponent = ({ status, isDeviceConnected }: IProps) => {
+  const [isCharged, setIsCharged] = useState(
+    status &&
+      status.end_timestamp === undefined &&
+      status.estimatedEnd &&
+      new Date(status.estimatedEnd) < new Date(),
+  );
+
+  useEffect(() => {
+    if (status) {
+      setIsCharged(
+        status.end_timestamp === undefined &&
+          status.estimatedEnd &&
+          new Date(status.estimatedEnd) < new Date(),
+      );
+    }
+  }, [status]);
 
   const handleStop = () => {
     router.push("/charge/stop");
@@ -40,13 +67,14 @@ export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Device</CardTitle>
+        <CardTitle>Charge Status</CardTitle>
         <CardDescription>
-          Monitor from here the status of your device charge
+          Monitor from here the status of your charge
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4 native:gap-2">
-        {isCharging && status ? (
+        {status &&
+        (["charged", "charging"].includes(status.status) || isCharged) ? (
           <View className="gap-1">
             <Text>The device is in charge</Text>
             {status.threshDownlow && (
@@ -69,7 +97,7 @@ export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
             <View>
               <Separator className="my-4" />
               <View className="gap-1">
-                {status.current && status.status === "charged" ? (
+                {status.status === "charged" || isCharged ? (
                   <Label>
                     Battery is fully charged. Please stop the charge and close
                     the door
@@ -77,10 +105,11 @@ export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
                 ) : (
                   <Label>
                     Battery is now charging.
-                    {remainingChargeTime ? (
+                    {status.estimatedEnd ? (
                       <Text>
                         {" "}
-                        Estimated time to finish charge: {remainingChargeTime}
+                        Estimated time to finish charge:{" "}
+                        {relativeHumanTime(new Date(status.estimatedEnd))}
                       </Text>
                     ) : (
                       <Text>..</Text>
@@ -92,22 +121,30 @@ export const RemoteTabComponent = ({ status, remainingChargeTime }: IProps) => {
           </View>
         ) : (
           <View className="gap-1">
-            <Text>The device is not connected</Text>
+            <Text>The device is not in charge</Text>
           </View>
         )}
       </CardContent>
       <CardFooter>
-        {isCharging ? (
+        {status &&
+        (["charging", "charged"].includes(status.status) || isCharged) ? (
           <Button className="w-full" onPress={handleStop}>
             <Text>Stop Charge</Text>
           </Button>
-        ) : isCloseDoor ? (
+        ) : status &&
+          ["closedoor", "disconnected", "charge_timeout", "ready"].includes(
+            status.status,
+          ) ? (
           <Button className="w-full" disabled={true}>
             <Text>Door is open</Text>
           </Button>
-        ) : (
+        ) : isDeviceConnected ? (
           <Button className="w-full" onPress={handleStart}>
             <Text>Start Charge</Text>
+          </Button>
+        ) : (
+          <Button className="w-full" disabled={true}>
+            <Text>Connect the device first</Text>
           </Button>
         )}
       </CardFooter>

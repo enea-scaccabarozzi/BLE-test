@@ -1,9 +1,9 @@
 import { isAxiosError } from "axios";
-import * as SecureStore from "expo-secure-store";
-import { fromPromise, fromSafePromise } from "neverthrow";
+import { fromPromise, okAsync } from "neverthrow";
 
+import { useSession } from "@app/auth/hooks/use-session";
 import { useBle } from "@app/ble/hooks/use-ble";
-import { createAppError } from "@app/shared/errors";
+import { appErrAsync, createAppError } from "@app/shared/errors";
 import { useHttp } from "@app/shared/hooks/use-http";
 import { AppResultAsync } from "@app/shared/types/errors";
 
@@ -11,23 +11,8 @@ import { ChargeStatus } from "../type/charge";
 
 export const useChargeService = () => {
   const { http } = useHttp();
-  const { toggleMosfet, isConnected, connect, requestDataUpdate } = useBle();
-
-  const setStartPercentage = async (percentage: number | null) => {
-    if (percentage === null) {
-      await SecureStore.deleteItemAsync("startPercentage");
-    } else {
-      await SecureStore.setItemAsync("startPercentage", percentage.toString());
-    }
-  };
-
-  const getStartPercentage = async (): Promise<number | null> => {
-    const percentage = await SecureStore.getItemAsync("startPercentage");
-    if (percentage === null) {
-      return null;
-    }
-    return parseInt(percentage, 10);
-  };
+  const { toggleMosfet, isConnected, requestDataUpdate } = useBle();
+  const { profile } = useSession();
 
   const promiseAdapter = <T>(resultFn: () => AppResultAsync<T>) => {
     return async () => {
@@ -36,34 +21,46 @@ export const useChargeService = () => {
     };
   };
 
-  const getEstimatedChargeTime = async (
-    current: number,
-    capacity: number,
-  ): Promise<[number, string]> => {
-    const startPercentage = await getStartPercentage();
-    if (startPercentage === null) {
-      return [0, "0m"];
+  const getEstimatedChargeTime = (): AppResultAsync<Date> => {
+    if (!isConnected) {
+      return appErrAsync({
+        publicMessage: "Device not connected, cannot calculate charge time",
+      });
     }
-    // Calculate the remaining capacity to charge
-    const remainingCapacityAh = capacity * (1 - startPercentage / 100);
 
-    // Time in hours
-    const timeHours = remainingCapacityAh / current;
+    return requestDataUpdate().andThen((data) => {
+      if (!profile) {
+        return appErrAsync({
+          publicMessage: "You need to be logged in to calculate charge time",
+        });
+      }
+      const amp = profile.batteryAmp;
+      const capacity = profile.batteryCapacity;
+      const startPercentage = data.socPerc;
+      if (
+        amp <= 0 ||
+        capacity <= 0 ||
+        startPercentage < 0 ||
+        startPercentage > 100
+      ) {
+        return appErrAsync({
+          publicMessage: "Invalid battery parameters",
+        });
+      }
 
-    // Convert to minutes
-    const timeMinutes = timeHours * 60;
+      const remainingCapacity = capacity * (1 - startPercentage / 100); // in Ah
+      const chargeTimeHours = remainingCapacity / amp; // in hours
+      const timeMinutes = Math.round(chargeTimeHours * 60); // convert to minutes
+      if (timeMinutes <= 0) {
+        return okAsync(new Date());
+      }
 
-    return [timeMinutes, getHumanRelativeTime(timeMinutes)];
-  };
+      const estimatedEnd = new Date(Date.now() + timeMinutes * 60 * 1000); // convert to milliseconds
 
-  const getHumanRelativeTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = Math.floor(minutes % 60);
-
-    if (hours > 0) {
-      return `${hours}h ${remainingMinutes}m`;
-    }
-    return `${remainingMinutes}m`;
+      return okAsync(
+        estimatedEnd, // convert to milliseconds
+      );
+    });
   };
 
   const fetchStatus = (): AppResultAsync<ChargeStatus> => {
@@ -109,26 +106,32 @@ export const useChargeService = () => {
   };
 
   const startCharge = (): AppResultAsync<true> => {
-    return fromPromise(http.patch<true>("/charge/start"), (err) => {
-      return isAxiosError(err) && err.response?.status === 400
-        ? createAppError({
-            publicMessage: `Cannot start charge, ${err.response.data.message.toLowerCase()}`,
-          })
-        : createAppError({
-            publicMessage: "Cannot start charge, internal error",
-          });
-    })
-      .map((res) => res.data)
-      .andThrough(() => (isConnected ? toggleMosfet(false) : connect()))
-      .andThrough(() =>
-        requestDataUpdate().andThen((data) =>
-          fromSafePromise(setStartPercentage(data.socPerc)),
-        ),
+    return getEstimatedChargeTime().andThen((estimatedEnd) =>
+      fromPromise(
+        http.patch<true>("/charge/start", { estimatedEnd }),
+        (err) => {
+          return isAxiosError(err) && err.response?.status === 400
+            ? createAppError({
+                publicMessage: `Cannot start charge, ${err.response.data.message.toLowerCase()}`,
+              })
+            : createAppError({
+                publicMessage: "Cannot start charge, internal error",
+              });
+        },
       )
-      .mapErr((err) => {
-        console.error(err);
-        return err;
-      });
+        .map((res) => res.data)
+        .andThrough(() =>
+          isConnected
+            ? toggleMosfet(false)
+            : appErrAsync({
+                publicMessage: "Cannot start charge, device not connected",
+              }),
+        )
+        .mapErr((err) => {
+          console.error(err);
+          return err;
+        }),
+    );
   };
 
   const stopCharge = (): AppResultAsync<true> => {
@@ -141,7 +144,6 @@ export const useChargeService = () => {
             publicMessage: "Cannot stop charge, internal error",
           });
     })
-      .andThrough(() => fromSafePromise(setStartPercentage(null)))
       .map((res) => res.data)
       .mapErr((err) => {
         console.error(err);
@@ -169,6 +171,5 @@ export const useChargeService = () => {
     startCharge,
     stopCharge,
     createDoorViolation,
-    getEstimatedChargeTime,
   };
 };

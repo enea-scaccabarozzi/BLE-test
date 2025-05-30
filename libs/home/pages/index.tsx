@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 
-import { useSession } from "@app/auth/hooks/use-session";
 import { useBle } from "@app/ble/hooks/use-ble";
 import { appErrAsync } from "@app/shared/errors";
 import { ErrorScreen } from "@app/shared/pages/error";
@@ -13,16 +11,9 @@ import { useChargeService } from "../services/charge";
 import { ChargeStatus } from "../type/charge";
 
 export const HomePage = () => {
-  const {
-    fetchStatus,
-    promiseAdapter,
-    createDoorViolation,
-    getEstimatedChargeTime,
-  } = useChargeService();
+  const { fetchStatus, promiseAdapter, createDoorViolation } =
+    useChargeService();
   const { dataMeasurements, isConnected, connect, disconnect } = useBle();
-  const { profile } = useSession();
-
-  const [remainingChargeTime, setRemainingChargeTime] = useState<string>();
 
   const {
     isPending,
@@ -66,25 +57,6 @@ export const HomePage = () => {
     return connect().map(() => true as const);
   };
 
-  const handleChargeTimeUpdate = async () => {
-    if (chargeStatus && profile && chargeStatus.current) {
-      const estimatedTime = await getEstimatedChargeTime(
-        chargeStatus.current,
-        profile.batteryAmp,
-      );
-      setRemainingChargeTime(estimatedTime[1]);
-    } else {
-      setRemainingChargeTime(undefined);
-    }
-  };
-
-  useEffect(() => {
-    if (dataMeasurements && profile && dataMeasurements.current) {
-      handleChargeTimeUpdate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataMeasurements, getEstimatedChargeTime, profile]);
-
   if (isPending) return <LoadingScreen page="home" />;
 
   if (error) return <ErrorScreen error={error} />;
@@ -94,10 +66,9 @@ export const HomePage = () => {
       deviceChargeStatus={chargeStatus}
       deviceData={dataMeasurements}
       isDeviceConnected={isConnected}
-      logRawEnabled={(process.env.EXPO_PUBLIC_DEPLOY_STAGE || "dev") === "dev"}
+      logRawEnabled={true}
       onConnect={handleConnect}
       onDisconnect={disconnect}
-      remainingChargeTime={remainingChargeTime}
     />
   );
 };

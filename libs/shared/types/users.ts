@@ -8,4 +8,5 @@ export interface User {
   fiscalCode: string;
   deviceName: string;
   batteryAmp: number;
+  batteryCapacity: number;
 }
