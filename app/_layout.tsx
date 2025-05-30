@@ -72,7 +72,11 @@ export default function Layout() {
         <ToastProvider>
           <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
             <SessionProvider>
-              <BleProvider devMode={false}>
+              <BleProvider
+                devMode={
+                  (process.env.EXPO_PUBLIC_DEPLOY_STAGE || "dev") === "dev"
+                }
+              >
                 <Slot />
               </BleProvider>
             </SessionProvider>
