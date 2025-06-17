@@ -39,7 +39,7 @@ export const BleProvider = ({ children, devMode }: IProps) => {
     checkConnectionStatus,
   } = useBleService();
   const { profile } = useSession();
-  const { trackEvent } = useAnalyticsService();
+  const { trackEvent, trackOnboardData } = useAnalyticsService();
 
   const [isConnected, setIsConnected] = useState(false);
   const [dataMeasurements, setDataMeasurements] =
@@ -106,18 +106,15 @@ export const BleProvider = ({ children, devMode }: IProps) => {
   });
 
   const requestDataUpdate = useCallback(() => {
-    // if (!isConnected)
-    //   return appErrAsync({
-    //     publicMessage: "Unable to request data, not connected",
-    //   });
-
     if (devMode) {
       setDataMeasurements(mockData());
-      return okAsync(mockData());
+
+      return okAsync(mockData()).andThrough(trackOnboardData);
     }
 
     return requestDataMesuraments(undefined)
       .andTee(setDataMeasurements)
+      .andThrough(trackOnboardData)
       .mapErr((err) => {
         console.log("ctx err:", err);
         return err;

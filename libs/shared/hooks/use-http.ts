@@ -15,7 +15,7 @@ function createApiClient(
 
 // Creating API clients for different aspects
 const http = createApiClient({
-  dev: "http://172.20.10.12:3000",
+  dev: "http://192.168.1.162:3000",
   production: "https://app.life2m.eu/api/v1",
 });
 

@@ -44,20 +44,14 @@ export default {
           isBackgroundEnabled: true,
           modes: ["peripheral", "central"],
           bluetoothAlwaysPermission:
-            "Allow $(PRODUCT_NAME) to connect to bluetooth devices",
-        },
-      ],
-      [
-        "expo-secure-store",
-        {
-          faceIDPermission:
-            "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
+            "Allow $(PRODUCT_NAME) to connect to bluetooth devices in order to communicate with your vehicle.",
         },
       ],
       [
         "expo-camera",
         {
-          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
+          cameraPermission:
+            "Allow $(PRODUCT_NAME) to access your camera in order to scan QR codes.",
           microphonePermission:
             "Allow $(PRODUCT_NAME) to access your microphone",
           recordAudioAndroid: true,
@@ -69,6 +63,13 @@ export default {
           configureAndroidBackup: true,
           faceIDPermission:
             "Allow $(PRODUCT_NAME) to access your Face ID biometric data.",
+        },
+      ],
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission:
+            "Allow $(PRODUCT_NAME) to use your location in order to provide location-based features and keep track of you vehicle.",
         },
       ],
       "expo-router",
