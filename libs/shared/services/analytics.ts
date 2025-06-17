@@ -83,7 +83,11 @@ export const useAnalyticsService = () => {
         fromPromise(
           http.post<true>("/analytics/onboard", {
             deviceName: profile.deviceName,
-            bmsData: data,
+            bmsData: {
+              socPerc: data.socPerc,
+              alarmBms: data.alarmBms,
+              mosfetOn: data.mosfetOn,
+            },
             latitude: coords.latitude,
             longitude: coords.longitude,
           }),
