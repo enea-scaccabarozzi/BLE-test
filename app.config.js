@@ -5,7 +5,7 @@ export default {
     name: IS_DEV ? "Life2M (Dev)" : "Life2M",
     slug: "Life2M",
     owner: "get_switch",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -23,6 +23,7 @@ export default {
       },
     },
     android: {
+      targetSdkVersion: 35,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
@@ -31,6 +32,11 @@ export default {
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
       ],
       package: IS_DEV ? "dev.getswitch.life2m" : "com.getswitch.life2m",
     },
@@ -69,7 +75,20 @@ export default {
         "expo-location",
         {
           locationAlwaysAndWhenInUsePermission:
-            "Allow $(PRODUCT_NAME) to use your location in order to provide location-based features and keep track of you vehicle.",
+            "Allow $(PRODUCT_NAME) to use your location in order to provide location-based features and keep track of your vehicle.",
+          locationAlwaysPermission:
+            "Allow $(PRODUCT_NAME) to use your location even when the app is closed to provide continuous vehicle tracking and safety features.",
+          locationWhenInUsePermission:
+            "Allow $(PRODUCT_NAME) to use your location when the app is in use to provide location-based features.",
+          isIosBackgroundLocationEnabled: true,
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true,
+        },
+      ],
+      [
+        "expo-task-manager",
+        {
+          // Configuration for background tasks
         },
       ],
       "expo-router",

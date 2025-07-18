@@ -70,6 +70,26 @@ export const useAnalyticsService = () => {
       .map(() => true);
   };
 
+  const trackEventWithLocation = (
+    data: IAnalyticEvent,
+    location: { latitude: number; longitude: number },
+  ): AppResultAsync<true> => {
+    return fromPromise(
+      http.post<true>("/analytics/events", {
+        eventData: JSON.stringify(data.eventData),
+        eventType: data.eventType,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      }),
+      () => {
+        return createAppError({
+          publicMessage: "Internal Server Error",
+          publicDetails: "Unable to track analytics event",
+        });
+      },
+    ).map(() => true);
+  };
+
   const trackOnboardData = (data: DataMeasurements): AppResultAsync<true> => {
     if (!profile) {
       return appErrAsync({
@@ -104,6 +124,7 @@ export const useAnalyticsService = () => {
 
   return {
     trackEvent,
+    trackEventWithLocation,
     trackOnboardData,
   };
 };

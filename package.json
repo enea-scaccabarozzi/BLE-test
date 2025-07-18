@@ -36,6 +36,7 @@
     "expo-router": "~3.5.23",
     "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
+    "expo-task-manager": "~11.8.2",
     "formik": "^2.4.6",
     "lucide-react-native": "^0.453.0",
     "moti": "^0.29.0",

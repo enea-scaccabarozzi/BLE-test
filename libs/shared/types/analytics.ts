@@ -4,12 +4,19 @@ interface IAnalyticEventBase {
     | "deviceDisconnect"
     | "error"
     | "chargeStart"
-    | "chargeStop";
+    | "chargeStop"
+    | "ping";
+
   eventData: object;
 }
 
 export interface IDeviceConnectEvent extends IAnalyticEventBase {
   eventType: "deviceConnect";
+  eventData: {};
+}
+
+export interface IPingEvent extends IAnalyticEventBase {
+  eventType: "ping";
   eventData: {};
 }
 
@@ -47,4 +54,5 @@ export type IAnalyticEvent =
   | IDeviceDisconnectEvent
   | IErrorEvent
   | IChargeStartEvent
-  | IChargeStopEvent;
+  | IChargeStopEvent
+  | IPingEvent;

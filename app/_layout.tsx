@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@app/auth/contexts/auth";
 import { BleProvider } from "@app/ble/contexts/ble";
 import { useColorScheme } from "@app/shared";
+import { BackgroundTrackingManager } from "@app/shared/components/background-tracking-manager";
 import { NAV_THEME } from "@app/shared/constants";
 import { ToastProvider } from "@app/shared/contexts/toast";
 
@@ -77,6 +78,7 @@ export default function Layout() {
                   (process.env.EXPO_PUBLIC_DEPLOY_STAGE || "dev") === "dev"
                 }
               >
+                <BackgroundTrackingManager />
                 <Slot />
               </BleProvider>
             </SessionProvider>
